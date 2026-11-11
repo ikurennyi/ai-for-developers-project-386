@@ -1,19 +1,21 @@
 # Repository guidance
 
-- This is currently a Hexlet project scaffold: there are no application sources, dependency manifests, or local test/lint commands to run yet.
-- `.github/workflows/hexlet-check.yml` is generated for Hexlet's automatic checks; do not edit, rename, or delete it. Checks run on pushes and require the repository's `HEXLET_ID` secret.
-- The workflow's README says Hexlet checks become available after completing the project steps; don't treat the absence of a local test command as a reason to modify the workflow.
-
-## Agent skills
-
-### Issue tracker
-
-Issues and specs live in GitHub Issues. Before tracker operations, read `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Use the five standard triage labels. Before triaging, read `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context layout. Before exploring the codebase, read `docs/agents/domain.md`.
+- Before exploring, read `docs/agents/domain.md`. Before tracker operations, read
+  `docs/agents/issue-tracker.md`; before triaging, read `docs/agents/triage-labels.md`.
+- Rails API is in `backend/`; Vue is in `frontend/`; `contracts/` owns TypeSpec;
+  `tooling/` owns commitlint. Keep their lockfiles and npm projects independent.
+- For install, DB/start/status/stop and hooks, follow `README.md`; for individual
+  tests/lint and acceptance gates, read `docs/checks.md`. Run `mise run check`
+  before handoff; checks never fix or stage sources.
+- For service changes or another worktree, read `docs/dev-services.md` first.
+  Use separate local credentials/ports/resources; stop preserves data.
+- Edit TypeSpec, then run `mise run contracts:generate`; OpenAPI and SDK are
+  committed generated artifacts, not hand-edited sources.
+- Use Conventional Commits (`feat: add ...`), `<type>/<kebab-case>` branches and
+  Conventional Commit PR titles. Preserve existing history; merge integration
+  before handoff. Push/PR require separate permission.
+- Preserve `.github/workflows/hexlet-check.yml` unchanged: no edit, rename or
+  deletion. Hexlet checks run on pushes with `HEXLET_ID`; availability depends
+  on completing project steps, not local test discovery.
+- Report local checks separately from unconfirmed external Actions. Final
+  standards/spec review and repeated check precede closing #12; leave #1 untouched.

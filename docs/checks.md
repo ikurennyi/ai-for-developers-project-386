@@ -11,7 +11,7 @@ mise run check
 ```
 
 `install` runs Bundler **4.0.22** with `BUNDLE_FROZEN=true`, independent `npm ci`
-commands in `contracts/` and `frontend/` (and `tooling/` when present), then
+commands in `contracts/`, `frontend/` and `tooling/`, then
 installs the frontend lockfile's Playwright Chromium. It does not update pins or
 lockfiles. Linux provisioners must also install Chromium system libraries, e.g.
 `mise exec -- node frontend/node_modules/playwright/cli.js install --with-deps chromium`.
@@ -50,6 +50,9 @@ another check. Contract artifacts are regenerated only in temporary directories.
 
 ## Actual verification, 2026-11-11
 
+Current full-cycle evidence and pending review/CI: [acceptance](acceptance.md).
+The following records the original T8 implementation run.
+
 On macOS arm64, Docker Engine 29.9.3 and the pinned toolchain:
 
 - Red: the public install/check commands were absent; the initial CLI failure
@@ -75,4 +78,24 @@ probes. Docker Engine and installed dependencies are required. The harness runs
 the real aggregate, without fake gate executables or HTTP mocks.
 
 No Linux/GitHub Actions execution, push or PR is claimed. The protected Hexlet
-workflow is unchanged; CI and hooks belong to T9.
+workflow is unchanged; current CI/hooks commands are in [hooks-and-ci](hooks-and-ci.md).
+
+## Additional public checks
+
+These are not extra gates in `check`; run them when changing infrastructure:
+
+| Command | Purpose |
+| --- | --- |
+| `mise run services:test` | Lifecycle configuration/validation CLI tests, no Docker |
+| `mise run smoke:test` | Real parallel smoke and failure/timeout cleanup probes |
+| `mise run check:test` | Real deliberate failures for every aggregate gate |
+| `mise run hooks:test` | Actual isolated Git hook success/failure tests |
+| `mise run commits:test` | Commit-event range fixtures |
+| `mise run ci:validate` | actionlint and application-workflow policy tests |
+| `mise run commits:check` | CI commitlint range; requires real GitHub event env/history |
+| `mise run contracts:generate` | Explicitly update committed generated artifacts (writes) |
+
+Run deliberate failure probes only in a dedicated checkout without concurrent
+edits. Two-checkout dev lifecycle probes are documented in [dev-services](dev-services.md).
+`hooks:install` is explicit setup, not a check. `frontend:format` is check-only;
+the module's `format:write` is an explicit, separate source-changing operation.

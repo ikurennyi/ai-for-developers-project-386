@@ -1,7 +1,8 @@
-# Toolchain and implementation interfaces (T1)
+# Toolchain and command interfaces
 
-This is the interface agreement for #3, under [the scaffold specification](../SPECIFICATION.md).
-It does not implement the application, service lifecycle, hooks, or aggregate checks.
+Pins and isolation agreement originating in #3, under
+[the scaffold specification](../SPECIFICATION.md). For the implemented full
+workflow, follow [README](../README.md); historical verification below is T1-only.
 
 ## Pinned tools
 
@@ -33,7 +34,7 @@ TypeSpec, its emitter, Hey API and application/test dependencies are pinned with
 their actual compatibility checks and lockfiles by T2/T3/T4/T7/T9. Do not choose
 floating generator versions when implementing those tasks.
 
-## Installation now
+## Toolchain bootstrap
 
 From the task worktree, with the pinned mise on PATH:
 
@@ -50,11 +51,12 @@ mise exec -- npm exec --yes --package=create-vue@3.24.0 -- create-vue --version
 `mise install` installs tools only, not application dependencies. It may also
 install tools from the user's global mise configuration; these are not project
 requirements. Use `mise exec -- ...` without assuming shell activation.
-Once modules exist, dependency installation is `bundle _4.0.22_ install` in
-`backend/` (frozen lockfile in CI), and `npm ci` independently in `contracts/`,
-`frontend/` and `tooling/`. Never run npm install at the repository root.
+Application dependency installation is now `mise run install`: frozen Bundler
+and independent `npm ci` in `contracts/`, `frontend/`, `tooling/`, plus Chromium.
+Generator version checks above are optional provenance checks, not app setup.
+Never run npm install at the repository root.
 
-## Command contracts for subsequent tasks
+## Implemented command contracts
 
 These interfaces are implemented by their listed owners; lifecycle commands
 are documented in [development services](dev-services.md), and aggregate
