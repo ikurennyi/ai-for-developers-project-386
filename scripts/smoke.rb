@@ -105,7 +105,8 @@ class Smoke
       "--env", "POSTGRES_USER=smoke", "--env", "POSTGRES_PASSWORD=#{password}",
       "--env", "POSTGRES_DB=#{@database}", IMAGE)
     ready("PostgreSQL") do
-      command("postgres-ready", "docker", "exec", @id, "pg_isready", "-U", "smoke", "-d", @database, timeout: 5)
+      # TCP avoids mistaking the image's temporary init-only Unix socket for readiness.
+      command("postgres-ready", "docker", "exec", @id, "pg_isready", "-h", "127.0.0.1", "-U", "smoke", "-d", @database, timeout: 5)
       true
     rescue RuntimeError
       false

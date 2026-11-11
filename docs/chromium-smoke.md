@@ -49,7 +49,8 @@ logs, Vite cache and Vitest attachments belong to a private temporary directory.
 Bootsnap is disabled and a per-run `SECRET_KEY_BASE` avoids Rails' shared local
 secret file. Test-mode Rails logs go to captured stdout.
 
-PostgreSQL readiness uses `pg_isready` (45-second deadline, each probe bounded).
+PostgreSQL readiness uses TCP `pg_isready` (45-second deadline, each probe
+bounded), avoiding the image's temporary init-only Unix-socket server.
 Rails readiness uses `/up` (45 seconds, one-second connect/read timeouts).
 Vitest's own Vite/browser startup waits for its listening server and page load;
 the entire Chromium command has a 120-second outer deadline, in addition to the
