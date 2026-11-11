@@ -12,6 +12,7 @@ pitchfork = "2.34.0"
 vacuum = "0.39.3"
 docker-cli = "29.9.3"
 docker-compose = "5.7.0"
+"github:rhysd/actionlint" = "1.7.12"
 
 [daemons.backend]
 run = "exec ruby scripts/services.rb serve backend"
@@ -73,6 +74,24 @@ run = "ruby scripts/check.rb"
 [tasks."check:test"]
 description = "Exercise real controlled failures through the aggregate CLI"
 run = "ruby test/check_integration_test.rb"
+
+[tasks."hooks:install"]
+description = "Install repository-local hooks only (never global Git settings)"
+run = "hk install --mise"
+
+[tasks."hooks:test"]
+run = "ruby test/hooks_test.rb"
+
+[tasks."commits:check"]
+description = "Lint only commits introduced by the GitHub push/PR event"
+run = "node tooling/check-commits.mjs"
+
+[tasks."commits:test"]
+run = "ruby test/commit_ranges_test.rb"
+
+[tasks."ci:validate"]
+description = "Validate only the application workflow; never modify Hexlet"
+run = ["actionlint .github/workflows/application-check.yml", "ruby test/workflow_test.rb"]
 
 [tasks."contracts:generate"]
 dir = "contracts"
