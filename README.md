@@ -12,24 +12,95 @@
 
 - [Исходные требования шага](1-step.md).
 - [Утверждённая спецификация](https://github.com/ikurennyi/ai-for-developers-project-386/issues/1).
-- [Закреплённые инструменты и интерфейсы команд](docs/toolchain.md) (T1; запуск приложения реализуется следующими задачами).
+- [Закреплённые инструменты](docs/toolchain.md), [локальная приёмка и открытые критерии](docs/acceptance.md).
+
+Сейчас реализована техническая страница состояния API, не бронирование.
+Локальный прогон не подтверждает зелёный GitHub Actions: внешний CI и итоговый
+review пока не подтверждены, родительская спецификация не объявляется выполненной.
 
 ## Стек
 
-- Разное
+- Rails API / Ruby, PostgreSQL; Vue 3, Router, TypeScript и Element Plus.
+- TypeSpec → OpenAPI 3.0 → generated Fetch SDK; RSpec и Vitest (включая Chromium).
+- mise, Docker Compose, pitchfork, hk и commitlint.
 
 ## Установка
 
-<!-- Опишите установку: клонирование, зависимости, переменные окружения -->
+Нужны [mise 2026.11.6 и закреплённые инструменты](docs/toolchain.md), работающий
+Docker Engine и системные зависимости сборки Ruby/pg (libpq, компилятор).
+mise устанавливает Docker CLI, но не Docker Engine/VM.
 
 ```bash
 git clone https://github.com/ikurennyi/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
+mise trust mise.toml
+mise install
+mise exec -- gem install bundler -v 4.0.22 --no-document
+mise run install
+```
+
+`install` использует frozen Bundler и отдельный `npm ci` в `contracts/`,
+`frontend/`, `tooling/`, затем устанавливает Chromium. На Linux нужны также
+системные библиотеки браузера:
+
+```sh
+mise exec -- node frontend/node_modules/playwright/cli.js install --with-deps chromium
 ```
 
 ## Использование
 
-<!-- Добавьте примеры запуска и запись asciinema — именно это смотрит работодатель -->
+Для каждого checkout/worktree создайте отдельную игнорируемую конфигурацию.
+Не перезаписывайте существующий `mise.local.toml`: шаблон меняет пароль.
+
+```sh
+umask 077
+mise exec -- ruby scripts/services.rb dev:env > mise.local.toml
+# Выберите три свободных разных порта; при смене POSTGRES_PORT обновите оба URL.
+mise trust mise.local.toml
+mise run dev:validate
+mise run db:up
+mise run db:prepare
+mise run dev:start
+mise run dev:status
+```
+
+Откройте `http://127.0.0.1:<FRONTEND_PORT>/`: страница показывает
+`API healthy: ok`, полученный через SDK и Vite proxy от Rails
+`GET /api/v1/health`. Health не доказывает подключение БД; smoke проверяет его отдельно.
+`dev:start` также сам подготавливает БД. Повторный start при занятых портах — ошибка.
+
+```sh
+mise run dev:stop
+```
+
+Остановка сохраняет данные и затрагивает только этот worktree. Идентификаторы,
+переменные, диагностика и смена настроек описаны в [dev-services](docs/dev-services.md).
+
+## Проверки и hooks
+
+```sh
+mise run check
+mise run hooks:install
+mise run hooks:test
+mise run commits:test
+mise run ci:validate
+```
+
+`check` не требует dev-сервисов или локальной конфигурации: он запускает все
+контрактные проверки, lint, форматирование, типы, RSpec, Vitest/jsdom,
+настоящий Chromium smoke и production build. Docker должен работать.
+Проверки не исправляют и не индексируют исходники.
+
+- [Все отдельные команды и failure probes](docs/checks.md).
+- [Chromium, изоляция и cleanup](docs/chromium-smoke.md).
+- [Hooks, commit ranges и CI](docs/hooks-and-ci.md). Установка hooks явная,
+  локальная для репозитория; linked worktree могут разделять hooks.
+- Коммиты: Conventional Commits, например `docs: clarify local setup`;
+  ветки: `docs/short-description`, PR titles — также Conventional Commits.
+
+Приложение проверяется отдельным `.github/workflows/application-check.yml` на
+push/PR той же командой `mise run check`. Push/PR требуют отдельного разрешения;
+результаты внешнего CI не выводятся из локального успеха.
 
 ---
 

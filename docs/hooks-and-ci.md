@@ -88,5 +88,6 @@ Local verification on macOS arm64 (2026-11-11):
 
 **External criterion remains unchecked:** no authorized push or GitHub Actions
 run has occurred, so green Linux/GitHub Actions execution is **unconfirmed**.
-Local readiness is not full specification completion. #11 remains open for the
-merger; no PR or push was created.
+Local readiness is not full specification completion. #11 was subsequently
+integrated and closed; current acceptance and pending review/CI are recorded in
+[acceptance](acceptance.md). No PR or push was created by this documentation task.

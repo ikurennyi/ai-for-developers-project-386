@@ -1,18 +1,14 @@
 # Chromium infrastructure smoke (T7 / #9)
 
-Install the pinned [toolchain](toolchain.md), start Docker Engine, install the
-backend bundle and run `npm ci` in `frontend/`. Install this lockfile's browser:
+Install the pinned [toolchain](toolchain.md), start Docker Engine, and run
+`mise run install` (all lockfiles plus Chromium). Then:
 
 ```sh
-cd frontend
-mise exec -- npx playwright install chromium
-# Linux/CI provisioners use: npx playwright install --with-deps chromium
-cd ..
 mise run smoke
 ```
 
 No development configuration, PostgreSQL service, Rails daemon or Vite daemon is
-needed. This command does not implement the later aggregate `check` or `install`.
+needed. The aggregate `mise run check` includes this command.
 `npm test` still runs the fast jsdom tests; browser tests are separate and are
 included by `smoke`. The underlying `frontend` command `npm run test:browser`
 requires a real Rails server supplied through `BACKEND_PORT`; prefer the isolated
@@ -87,6 +83,9 @@ An unrelated child listener remains alive and responds after all these runs.
 These opt-in flags are runner probes, not application behavior or HTTP mocks.
 
 ## Actual local verification, 2026-11-11
+
+Current full-cycle evidence and pending review/CI: [acceptance](acceptance.md).
+The following records the original T7 implementation run.
 
 On macOS arm64 / Docker Engine 29.9.3 with the pinned Ruby/Node and lockfiles:
 

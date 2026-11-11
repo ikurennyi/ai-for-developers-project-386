@@ -1,9 +1,9 @@
 # Worktree-local development services (T5 / #7)
 
 Install the [pinned toolchain](toolchain.md), provide a running Docker Engine,
-then install the existing module dependencies from their lockfiles (`bundle
-install` in `backend/`, `npm ci` in `frontend/`). These lifecycle tasks do not
-install application dependencies or replace the later aggregate install/check tasks.
+then run `mise run install` for the frozen module dependencies and Chromium.
+These lifecycle tasks do not install application dependencies; see
+[README](../README.md) for the complete installation sequence.
 
 ## Configure each checkout separately
 
