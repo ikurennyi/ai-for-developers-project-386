@@ -16,7 +16,14 @@ function run(command, args) {
 
 async function files(directory, prefix = '') {
   const result = [];
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
+  let entries;
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === 'ENOENT') return result;
+    throw error;
+  }
+  for (const entry of entries) {
     const name = join(prefix, entry.name);
     if (entry.isDirectory()) result.push(...await files(join(directory, entry.name), name));
     else result.push(name);
@@ -36,9 +43,18 @@ try {
     assert.deepEqual(await readFile(join(first, name)), await readFile(join(second, name)),
       `Generation is not reproducible: ${name}`);
   }
+  assert.deepEqual(await files(join(root, 'generated')), ['openapi.json'],
+    'OpenAPI drift: generated file list differs; run npm run generate in contracts/');
   assert.deepEqual(await readFile(join(first, 'openapi.json')),
     await readFile(join(root, 'generated/openapi.json')),
     'OpenAPI drift: run npm run generate in contracts/');
+  const sdk = join(root, '../frontend/src/generated/sdk');
+  assert.deepEqual(await files(sdk), await files(join(first, 'sdk')),
+    'SDK drift: generated file list differs; run npm run generate in contracts/');
+  for (const name of await files(join(first, 'sdk'))) {
+    assert.deepEqual(await readFile(join(first, 'sdk', name)), await readFile(join(sdk, name)),
+      `SDK drift: ${name}; run npm run generate in contracts/`);
+  }
   run('vacuum', ['lint', '--no-banner', '--fail-severity', 'warn', join(first, 'openapi.json')]);
   await copyFile(join(root, 'test/sdk-consumer.ts'), join(first, 'sdk-consumer.ts'));
   run(process.execPath, [

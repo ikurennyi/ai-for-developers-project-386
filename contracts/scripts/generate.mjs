@@ -1,6 +1,6 @@
 import { createClient } from '@hey-api/openapi-ts';
 import { spawnSync } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -29,6 +29,9 @@ try {
     const target = join(root, 'generated/openapi.json');
     await mkdir(dirname(target), { recursive: true });
     await copyFile(join(output, 'openapi.json'), target);
+    const sdk = join(root, '../frontend/src/generated/sdk');
+    await rm(sdk, { recursive: true, force: true });
+    await cp(join(output, 'sdk'), sdk, { recursive: true });
   }
 } finally {
   await rm(temporary, { recursive: true, force: true });
