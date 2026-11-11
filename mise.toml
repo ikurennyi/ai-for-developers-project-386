@@ -12,3 +12,44 @@ pitchfork = "2.34.0"
 vacuum = "0.39.3"
 docker-cli = "29.9.3"
 docker-compose = "5.7.0"
+
+[daemons.backend]
+run = "exec ruby scripts/services.rb serve backend"
+ready_cmd = { run = "ruby scripts/services.rb ready backend", timeout = "45s" }
+retry = 0
+proxy = false
+stop_signal = { signal = "SIGTERM", timeout = "10s" }
+
+[daemons.frontend]
+run = "exec ruby scripts/services.rb serve frontend"
+ready_cmd = { run = "ruby scripts/services.rb ready frontend", timeout = "45s" }
+retry = 0
+proxy = false
+stop_signal = { signal = "SIGTERM", timeout = "10s" }
+
+[tasks."dev:env"]
+description = "Print a worktree-local mise.local.toml template (choose free ports)"
+run = "ruby scripts/services.rb dev:env"
+
+[tasks."dev:validate"]
+description = "Validate isolation settings and fail on occupied ports"
+run = "ruby scripts/services.rb dev:validate"
+
+[tasks."db:up"]
+run = "ruby scripts/services.rb db:up"
+
+[tasks."db:prepare"]
+run = "ruby scripts/services.rb db:prepare"
+
+[tasks."dev:start"]
+run = "ruby scripts/services.rb dev:start"
+
+[tasks."dev:status"]
+run = "ruby scripts/services.rb dev:status"
+
+[tasks."dev:stop"]
+run = "ruby scripts/services.rb dev:stop"
+
+[tasks."services:test"]
+description = "Test the lifecycle CLI validation boundary (no Docker required)"
+run = "ruby test/services_test.rb"
