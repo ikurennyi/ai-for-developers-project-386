@@ -53,3 +53,11 @@ run = "ruby scripts/services.rb dev:stop"
 [tasks."services:test"]
 description = "Test the lifecycle CLI validation boundary (no Docker required)"
 run = "ruby test/services_test.rb"
+
+[tasks.smoke]
+description = "Run Chromium against temporary isolated Rails/PostgreSQL (no dev services)"
+run = "ruby scripts/smoke.rb"
+
+[tasks."smoke:test"]
+description = "Probe parallel smoke isolation and success/failure/timeout cleanup"
+run = "ruby test/smoke_integration_test.rb"
