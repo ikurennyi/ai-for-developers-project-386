@@ -1,0 +1,68 @@
+name: Application checks
+
+"on":
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.3-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-ephemeral
+          POSTGRES_DB: scaffold_ci
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U ci -d scaffold_ci"
+          --health-interval 1s
+          --health-timeout 3s
+          --health-retries 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install native Ruby and PostgreSQL build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential autoconf libssl-dev libyaml-dev zlib1g-dev libreadline-dev libffi-dev libgmp-dev libpq-dev pkg-config
+      - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          version: 2026.11.6
+          cache: false
+      - name: Install locked dependencies
+        run: |
+          mise exec -- gem install bundler -v 4.0.22 --no-document
+          mise run install
+      - name: Install pinned Chromium and system dependencies
+        run: mise exec -- node frontend/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Validate workflow and hook policies
+        run: |
+          mise run ci:validate
+          mise run hooks:test
+          mise run commits:test
+      - name: Check new commit messages
+        run: mise run commits:check
+      - name: Verify CI PostgreSQL service
+        working-directory: backend
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: ${{ job.services.postgres.ports['5432'] }}
+          PGUSER: ci
+          PGPASSWORD: ci-ephemeral
+          PGDATABASE: scaffold_ci
+        run: |
+          mise exec -- bundle _4.0.22_ exec ruby -rpg -e 'PG.connect { |db| abort "wrong PostgreSQL version" unless db.exec("SHOW server_version").getvalue(0, 0).start_with?("18.3"); abort "SQL probe failed" unless db.exec("SELECT 1").getvalue(0, 0) == "1" }'
+      - name: Run the same aggregate as local development
+        env:
+          CI: "true"
+          DATABASE_URL: postgresql://ci:ci-ephemeral@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/scaffold_ci
+        run: mise run check

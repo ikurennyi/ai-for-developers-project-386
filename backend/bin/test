@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+# Never fall back to a developer's DATABASE_URL for tests.
+test_url = ENV.fetch("TEST_DATABASE_URL")
+abort "TEST_DATABASE_URL must differ from development DATABASE_URL" if test_url == ENV["DATABASE_URL"]
+
+ENV["DATABASE_URL"] = test_url
+ENV["RAILS_ENV"] = "test"
+Dir.chdir(File.expand_path("..", __dir__))
+exec "bundle", "_4.0.22_", "exec", "rspec", *ARGV

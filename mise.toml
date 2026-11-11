@@ -1,0 +1,137 @@
+min_version = "2026.11.6"
+
+[settings]
+experimental = true
+
+[tools]
+ruby = "3.4.12"
+node = "24.22.2"
+hk = "2.12.0"
+pkl = "0.33.0"
+pitchfork = "2.34.0"
+vacuum = "0.39.3"
+docker-cli = "29.9.3"
+docker-compose = "5.7.0"
+"github:rhysd/actionlint" = "1.7.12"
+
+[daemons.backend]
+run = "exec ruby scripts/services.rb serve backend"
+ready_cmd = { run = "ruby scripts/services.rb ready backend", timeout = "45s" }
+retry = 0
+proxy = false
+stop_signal = { signal = "SIGTERM", timeout = "10s" }
+
+[daemons.frontend]
+run = "exec ruby scripts/services.rb serve frontend"
+ready_cmd = { run = "ruby scripts/services.rb ready frontend", timeout = "45s" }
+retry = 0
+proxy = false
+stop_signal = { signal = "SIGTERM", timeout = "10s" }
+
+[tasks."dev:env"]
+description = "Print a worktree-local mise.local.toml template (choose free ports)"
+run = "ruby scripts/services.rb dev:env"
+
+[tasks."dev:validate"]
+description = "Validate isolation settings and fail on occupied ports"
+run = "ruby scripts/services.rb dev:validate"
+
+[tasks."db:up"]
+run = "ruby scripts/services.rb db:up"
+
+[tasks."db:prepare"]
+run = "ruby scripts/services.rb db:prepare"
+
+[tasks."dev:start"]
+run = "ruby scripts/services.rb dev:start"
+
+[tasks."dev:status"]
+run = "ruby scripts/services.rb dev:status"
+
+[tasks."dev:stop"]
+run = "ruby scripts/services.rb dev:stop"
+
+[tasks."services:test"]
+description = "Test the lifecycle CLI validation boundary (no Docker required)"
+run = "ruby test/services_test.rb"
+
+[tasks."services:fresh-test"]
+description = "Probe final TCP readiness from a fresh dedicated checkout/volume"
+run = "ruby test/fresh_database_integration_test.rb"
+
+[tasks."ci:database-test"]
+description = "Simulate the CI PostgreSQL service locally, including parallel/failing gates"
+run = "ruby test/ci_database_integration_test.rb"
+
+[tasks.smoke]
+description = "Run Chromium against temporary isolated Rails/PostgreSQL (no dev services)"
+run = "ruby scripts/smoke.rb"
+
+[tasks."smoke:test"]
+description = "Probe parallel smoke isolation and success/failure/timeout cleanup"
+run = "ruby test/smoke_integration_test.rb"
+
+[tasks.install]
+description = "Install frozen backend/npm lockfiles and the pinned Chromium browser"
+run = "ruby scripts/install.rb"
+
+[tasks.check]
+description = "Run all mandatory gates in order, without fixing or staging sources"
+run = "ruby scripts/check.rb"
+
+[tasks."check:test"]
+description = "Exercise real controlled failures through the aggregate CLI"
+run = "ruby test/check_integration_test.rb"
+
+[tasks."hooks:install"]
+description = "Install repository-local hooks only (never global Git settings)"
+run = "hk install --mise"
+
+[tasks."hooks:test"]
+run = "ruby test/hooks_test.rb"
+
+[tasks."commits:check"]
+description = "Lint only commits introduced by the GitHub push/PR event"
+run = "node tooling/check-commits.mjs"
+
+[tasks."commits:test"]
+run = "ruby test/commit_ranges_test.rb"
+
+[tasks."ci:validate"]
+description = "Validate only the application workflow; never modify Hexlet"
+run = ["actionlint .github/workflows/application-check.yml", "ruby test/workflow_test.rb"]
+
+[tasks."contracts:generate"]
+dir = "contracts"
+run = "npm run generate"
+
+[tasks."contracts:check"]
+dir = "contracts"
+run = "npm run check"
+
+[tasks."backend:lint"]
+dir = "backend"
+run = "bundle _4.0.22_ exec rubocop"
+
+[tasks."backend:test"]
+run = "ruby scripts/smoke.rb --backend-test"
+
+[tasks."frontend:lint"]
+dir = "frontend"
+run = "npm run lint"
+
+[tasks."frontend:format"]
+dir = "frontend"
+run = "npm run format"
+
+[tasks."frontend:typecheck"]
+dir = "frontend"
+run = "npm run type-check -- --force"
+
+[tasks."frontend:test"]
+dir = "frontend"
+run = "npm test"
+
+[tasks."frontend:build"]
+dir = "frontend"
+run = "npm run build-only"

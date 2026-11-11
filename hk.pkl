@@ -1,0 +1,38 @@
+amends "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Config.pkl"
+
+hooks {
+  ["pre-commit"] {
+    fix = false
+    stage = false
+    stash = "none"
+    steps {
+      ["staged-whitespace"] {
+        check = "git diff --cached --check"
+      }
+      ["backend-lint"] {
+        glob = List("backend/**")
+        check = "mise run backend:lint"
+      }
+      ["frontend-lint"] {
+        glob = List("frontend/**")
+        check = "mise run frontend:lint"
+      }
+      ["frontend-format"] {
+        glob = List("frontend/**")
+        check = "mise run frontend:format"
+      }
+    }
+  }
+  ["commit-msg"] {
+    fix = false
+    stage = false
+    stash = "none"
+    steps {
+      ["commitlint"] {
+        check = new Command {
+          argv = List("node", "tooling/node_modules/@commitlint/cli/cli.js", "--config", "tooling/commitlint.config.cjs", "--edit", "{{commit_msg_file}}")
+        }
+      }
+    }
+  }
+}
