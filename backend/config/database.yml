@@ -1,0 +1,15 @@
+# DATABASE_URL is authoritative; no shared local database defaults.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  url: <%= ENV.fetch("DATABASE_URL") %>
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default
