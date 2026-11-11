@@ -8,6 +8,11 @@
 Учебный проект Хекслета: https://ru.hexlet.io/programs/ai-for-developers
 Как это должно работать: https://files.hexlet.app/a/2ipc5m
 
+## Первый шаг: каркас приложения
+
+- [Исходные требования шага](1-step.md).
+- [Утверждённая спецификация](https://github.com/ikurennyi/ai-for-developers-project-386/issues/1).
+
 ## Стек
 
 - Разное
