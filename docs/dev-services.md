@@ -49,7 +49,7 @@ Compose has no fixed container name or externally shared volume/network.
 | --- | --- |
 | `mise run dev:env` | Print a local TOML template, without starting anything |
 | `mise run dev:validate` | Validate configuration and check all three ports are currently free |
-| `mise run db:up` | Start/reuse this checkout's PostgreSQL with the pinned standalone Compose; wait for its explicit healthcheck (45-second deadline) |
+| `mise run db:up` | Start/reuse this checkout's PostgreSQL with the pinned standalone Compose; wait for final TCP health, not the init-only Unix socket (45-second deadline) |
 | `mise run db:prepare` | Run `db:up`, then Rails `db:prepare` separately for development and the explicit test URL |
 | `mise run dev:start` | Reject occupied application ports, prepare DBs, then start native `mise daemons` backend/frontend under pinned pitchfork |
 | `mise run dev:status` | Show project, ports, Compose and daemon status; include recent logs for unready services; exit nonzero unless all three are ready |
@@ -89,6 +89,8 @@ prune, global pitchfork stop, or shared cleanup as normal lifecycle operations.
 
 ```sh
 mise run services:test
+# Fresh dedicated checkout only; refuses existing state/volume, retains its data:
+mise run services:fresh-test
 # Prepare TWO dedicated checkouts at the implementation commit, install each
 # checkout's frontend dependencies and create its local configuration as above.
 # Both must initially have their dev services stopped; do not use someone else's

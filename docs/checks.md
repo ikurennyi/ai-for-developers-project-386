@@ -30,7 +30,7 @@ nonzero subprocess status fail the aggregate; no gate is optional:
 4. `frontend:format`: Prettier **check**, never write.
 5. `frontend:typecheck`: strict vue-tsc project build with `--force`, so cached
    incremental results cannot hide changed errors.
-6. `backend:test`: RSpec against a fresh, real PostgreSQL 18.3 container.
+6. `backend:test`: RSpec against a fresh database on real PostgreSQL 18.3.
 7. `frontend:test`: Vitest jsdom tests.
 8. `smoke`: real Rails, proxy, SDK and Chromium DOM test in Vitest Browser Mode.
 9. `frontend:build`: Vite production build (types were already checked above).
@@ -40,9 +40,18 @@ database URL is required. RSpec reuses the [smoke runner's](chromium-smoke.md)
 per-invocation random PostgreSQL identity, pinned image, tmpfs, independent SQL
 connection probe, timeouts, redacted diagnostics and targeted cleanup. It does
 not start application servers. The later Chromium gate gets another fresh
-database and temporary servers. Caller database URLs are ignored, never dropped.
-Cleanup removes only recorded containers and child process groups, on success
-and failure. There is no Compose down/prune or development-daemon cleanup.
+database and temporary servers. Locally, caller database URLs are ignored.
+With explicit `CI=true`, both gates instead require `DATABASE_URL` pointing to
+a disposable PostgreSQL 18.3 service with CREATE/DROP DATABASE privileges (URL
+without query or fragment, so libpq options cannot override the random DB). Each
+gate creates a random `smoke_<20 hex digits>` database there, overrides the URL's
+database for Rails/RSpec, and drops only that newly created database in cleanup.
+The service and the original URL's database are retained. Missing or unusable CI
+configuration fails, without falling back to Docker. This mode needs the locked
+pg gem but no Docker commands from the gates. Local isolated Docker behavior and
+the aggregate command are unchanged. Child process groups and private directories
+are removed in both modes, on success and failure; cleanup failures fail the gate.
+There is no Compose down/prune or development-daemon cleanup.
 
 Checks never fix or stage sources. They may create ignored build/type caches or
 `frontend/dist/`; these are not source edits and do not need manual deletion for
@@ -87,6 +96,8 @@ These are not extra gates in `check`; run them when changing infrastructure:
 | Command | Purpose |
 | --- | --- |
 | `mise run services:test` | Lifecycle configuration/validation CLI tests, no Docker |
+| `mise run services:fresh-test` | Fresh dedicated checkout/volume: immediate TCP SQL after `db:up`, preparation, stop retaining data |
+| `mise run ci:database-test` | Local Docker fixture simulates CI service: parallel gates, failures, aggregate and SQL cleanup assertions |
 | `mise run smoke:test` | Real parallel smoke and failure/timeout cleanup probes |
 | `mise run check:test` | Real deliberate failures for every aggregate gate |
 | `mise run hooks:test` | Actual isolated Git hook success/failure tests |
@@ -97,5 +108,8 @@ These are not extra gates in `check`; run them when changing infrastructure:
 
 Run deliberate failure probes only in a dedicated checkout without concurrent
 edits. Two-checkout dev lifecycle probes are documented in [dev-services](dev-services.md).
+For all 13 deliberate aggregate failures in CI service mode, run
+`mise exec -- ruby test/ci_database_integration_test.rb --failure-probes` in a
+dedicated checkout. It also performs two clean repeats and checks source/index bytes.
 `hooks:install` is explicit setup, not a check. `frontend:format` is check-only;
 the module's `format:write` is an explicit, separate source-changing operation.

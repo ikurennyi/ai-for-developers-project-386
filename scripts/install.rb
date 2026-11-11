@@ -4,11 +4,7 @@ def install(*command, directory:, env: {})
 end
 
 install("bundle", "_4.0.22_", "install", directory: File.join(root, "backend"), env: { "BUNDLE_FROZEN" => "true" })
-%w[contracts frontend].each do |name|
+%w[contracts frontend tooling].each do |name|
   install("npm", "ci", directory: File.join(root, name))
-end
-# T9 owns tooling; once present it is an independent locked npm project too.
-if File.directory?(File.join(root, "tooling"))
-  install("npm", "ci", directory: File.join(root, "tooling"))
 end
 install("node", "node_modules/playwright/cli.js", "install", "chromium", directory: File.join(root, "frontend"))

@@ -2,6 +2,7 @@
 require "json"
 require "open3"
 require "socket"
+require_relative "resource_assertions"
 
 ROOT = File.expand_path("..", __dir__)
 
@@ -16,26 +17,6 @@ def run_probe(*args)
   assert(event, "missing resource evidence")
   resources = JSON.parse(event.delete_prefix("SMOKE_RESOURCES "))
   [output, status, resources]
-end
-
-def assert_clean(resources)
-  _, status = Open3.capture2e("docker", "inspect", resources.fetch("container"))
-  assert(!status.success?, "temporary PostgreSQL survived")
-  resources.fetch("pids").each do |pid|
-    begin
-      Process.kill(0, pid)
-      raise "temporary process #{pid} survived"
-    rescue Errno::ESRCH
-      # Expected: only this run's children were stopped.
-    end
-    begin
-      Process.kill(0, -pid)
-      raise "temporary process group #{pid} survived"
-    rescue Errno::ESRCH
-      # Includes subprocesses such as Chromium and its driver.
-    end
-  end
-  assert(!File.exist?(resources.fetch("directory")), "temporary directory survived")
 end
 
 # An unrelated listener must survive both successful and failed smoke runs.

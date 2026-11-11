@@ -9,6 +9,9 @@
   before handoff; checks never fix or stage sources.
 - For service changes or another worktree, read `docs/dev-services.md` first.
   Use separate local credentials/ports/resources; stop preserves data.
+- Test gates ignore caller DB URLs locally. `CI=true` requires `DATABASE_URL`
+  for a disposable PostgreSQL service with CREATE/DROP DATABASE privileges;
+  gates create/drop only random per-run databases, never the URL's database.
 - Edit TypeSpec, then run `mise run contracts:generate`; OpenAPI and SDK are
   committed generated artifacts, not hand-edited sources.
 - Use Conventional Commits (`feat: add ...`), `<type>/<kebab-case>` branches and

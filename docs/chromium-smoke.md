@@ -35,9 +35,16 @@ success is **not** used as evidence of a working database connection.
 Each invocation creates a cryptographically random container/database identity
 and password. Docker publishes PostgreSQL to an OS-assigned loopback port. Its
 image is the same pinned PostgreSQL 18.3 digest as development; its data is tmpfs,
-not a development volume. No caller-provided database URL is used or dropped.
+not a development volume. In local mode no caller-provided database URL is used or dropped.
 Only the container ID recorded by this invocation is removed, including its
 ephemeral anonymous volumes. Development Compose and mise daemons are untouched.
+
+With explicit `CI=true`, `DATABASE_URL` must identify a disposable PostgreSQL
+service with CREATE/DROP DATABASE privileges. The same runner creates one random
+database on that service and runs its SQL/version probe and Rails against it.
+Cleanup drops only that database, retaining the service and its original database.
+The gates do not invoke Docker in this mode. See [checks](checks.md) for the local
+`ci:database-test` service simulation and failure/parallelism probes.
 
 Rails and the browser Vite server each get an available loopback port with strict
 binding and **no fallback** if another process wins the bind race. Rails PID and
