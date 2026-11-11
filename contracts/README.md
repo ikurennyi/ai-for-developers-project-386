@@ -1,4 +1,4 @@
-# API contracts (T2)
+# API contracts
 
 `main.tsp` is the editable API source. The official TypeSpec OpenAPI emitter
 produces `generated/openapi.json` (OpenAPI 3.0.0). Do not edit generated files.
@@ -18,17 +18,19 @@ mise exec -- npm --prefix contracts test
 ```
 
 - `generate` compiles TypeSpec and generates a Fetch SDK temporarily, then updates
-  only the tracked OpenAPI. No Rails or Vue installation is needed.
+  tracked OpenAPI and replaces `frontend/src/generated/sdk/` (including removing
+  stale SDK files). No Rails or Vue installation is needed.
 - `check` regenerates OpenAPI and the entire SDK twice in independent temporary
-  directories, compares every file byte-for-byte, checks tracked OpenAPI drift,
+  directories, compares every file byte-for-byte, checks tracked OpenAPI and SDK
+  drift (modified, missing, and extra files, including missing directories),
   runs vacuum (warnings fail), and strictly typechecks the generated SDK and a
   consumer fixture with TypeScript. It never overwrites tracked artifacts.
 - `test` checks the health contract and the check command, including controlled
-  failures for invalid TypeSpec, OpenAPI drift, vacuum warnings, invalid SDK
+  failures for invalid TypeSpec, OpenAPI/SDK drift, vacuum warnings, invalid SDK
   consumption and nondeterministic SDK output. Probes mutate disposable copies,
   never repository files. Temporary directories are cleaned on success/failure.
 
-To retain both artifacts for inspection or T6 integration, supply a dedicated
+To retain both artifacts for inspection, supply a dedicated
 output directory (relative paths resolve from `contracts/` with npm's `--prefix`):
 
 ```sh
@@ -36,12 +38,16 @@ mise exec -- npm --prefix contracts run generate -- --output /absolute/temporary
 ```
 
 The directory contains `openapi.json` and `sdk/` (including bundled Fetch client
-and core support). This mode does not update the tracked OpenAPI. T6 owns placing
-the SDK in frontend and adding SDK drift comparison there; T2 deliberately does
-not write to frontend. Root mise aliases also belong to later integration tasks.
+and core support). This mode does not update either tracked artifact directory.
+The root-config owner should wire `contracts:generate` to `npm --prefix contracts
+run generate` and `contracts:check` to `npm --prefix contracts run check`. Both
+propagate failures; generation is the only source-writing operation. `npm --prefix
+contracts test` separately exercises controlled failures in disposable fixtures.
 The generated operation is `getHealth`; the client default `baseUrl` is `/api/v1`
 and its operation path is `/health`, so the prefix appears exactly once. Consumers
 can use `getHealth({ throwOnError: true })` and read `response.data.status`.
+Generated files stay byte-identical to Hey API output: frontend ESLint/Prettier
+exclude them, while strict TypeScript and drift checks cover the complete SDK.
 
 ## Pins and compatibility
 
