@@ -28,8 +28,12 @@ The lockfile includes arm64 macOS and arm64/x86_64 Linux platforms and checksums
 `{"status":"ok"}`. It is API liveness, not database readiness.
 The generated `/up` boot check is retained. RSpec checks the real request response
 and separately executes `SELECT 1` through Active Record against PostgreSQL.
-Generated OpenAPI validation is a subsequent contract-integration task (T6),
-not implemented here. No HTTP mocks are used.
+The request spec runs Committee 5.6.4 against `contracts/generated/openapi.json`,
+validating the request and response status, media type and body. The API prefix
+comes from the document's server URL, not a second handwritten schema.
+Negative examples corrupt a real response and prove rejection of missing/extra
+fields, wrong enum/type, malformed JSON, undocumented status and media type.
+No HTTP mocks are used. Regenerate contracts before testing a contract change.
 
 ## T3 verification (2026-11-11)
 
