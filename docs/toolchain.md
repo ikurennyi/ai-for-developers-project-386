@@ -56,9 +56,9 @@ Once modules exist, dependency installation is `bundle _4.0.22_ install` in
 
 ## Command contracts for subsequent tasks
 
-These interfaces are implemented by their listed owners; T5's lifecycle commands
-are now available (see [development services](dev-services.md)). Other commands
-remain reserved until their tasks integrate. Calling a missing
+These interfaces are implemented by their listed owners; lifecycle commands
+are documented in [development services](dev-services.md), and aggregate
+installation/checks in [checks](checks.md). Calling a missing
 task must fail; do not add successful echo/no-op placeholders. Install/lifecycle
 tasks may mutate dependencies or runtime state, but checks must not fix or stage
 source files. Every failure must propagate a nonzero exit status.

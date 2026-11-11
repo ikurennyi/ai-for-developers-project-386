@@ -11,7 +11,7 @@ class Smoke
   IMAGE = "postgres:18.3-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7"
 
   def initialize(mode)
-    raise "unknown smoke option" unless [nil, "--fail-after-ready", "--probe-readiness-timeout", "--probe-browser-failure"].include?(mode)
+    raise "unknown smoke option" unless [nil, "--backend-test", "--fail-after-ready", "--probe-readiness-timeout", "--probe-browser-failure"].include?(mode)
     @mode = mode
     @directory = Dir.mktmpdir("scaffold-smoke-")
     @id = "smoke-#{SecureRandom.hex(10)}"
@@ -97,7 +97,8 @@ class Smoke
   end
 
   def run
-    puts "Smoke #{@id}: temporary PostgreSQL/Rails/Vitest Vite + Chromium"
+    stack = @mode == "--backend-test" ? "PostgreSQL + RSpec" : "PostgreSQL/Rails/Vitest Vite + Chromium"
+    puts "Smoke #{@id}: temporary #{stack}"
     @password = password = SecureRandom.hex(24)
     command("postgres-start", "docker", "run", "--detach", "--rm", "--name", @id,
       "--cidfile", File.join(@directory, "container.id"),
@@ -120,6 +121,11 @@ class Smoke
     probe = 'connection = ActiveRecord::Base.connection; raise "wrong database" unless connection.select_value("SELECT current_database()") == ENV.fetch("SMOKE_DATABASE"); raise "unexpected PostgreSQL version" unless connection.select_value("SHOW server_version").start_with?("18.3"); raise "connection failed" unless connection.select_value("SELECT 1") == 1; puts "PostgreSQL connection verified"'
     puts command("database-probe", "bundle", "exec", "rails", "runner", probe,
       directory: backend, env: { "SMOKE_DATABASE" => @database })
+    if @mode == "--backend-test"
+      puts command("rspec", "ruby", "bin/test", directory: backend,
+        env: { "DATABASE_URL" => nil })
+      return
+    end
     backend_port = free_port
     rails_pid = start("rails", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
       "-P", File.join(@directory, "rails.pid"), "--log-to-stdout", directory: backend)
