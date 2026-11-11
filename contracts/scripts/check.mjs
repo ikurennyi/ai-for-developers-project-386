@@ -37,6 +37,7 @@ try {
   for (const output of [first, second]) {
     run(process.execPath, [join(root, 'scripts/generate.mjs'), '--output', output]);
   }
+  run('vacuum', ['lint', '--no-banner', '--fail-severity', 'warn', join(first, 'openapi.json')]);
   const generatedFiles = await files(first);
   assert.deepEqual(await files(second), generatedFiles, 'Generated file list is not reproducible');
   for (const name of generatedFiles) {
@@ -55,7 +56,6 @@ try {
     assert.deepEqual(await readFile(join(first, 'sdk', name)), await readFile(join(sdk, name)),
       `SDK drift: ${name}; run npm run generate in contracts/`);
   }
-  run('vacuum', ['lint', '--no-banner', '--fail-severity', 'warn', join(first, 'openapi.json')]);
   await copyFile(join(root, 'test/sdk-consumer.ts'), join(first, 'sdk-consumer.ts'));
   run(process.execPath, [
     join(root, 'node_modules/typescript/bin/tsc'),

@@ -61,3 +61,50 @@ run = "ruby scripts/smoke.rb"
 [tasks."smoke:test"]
 description = "Probe parallel smoke isolation and success/failure/timeout cleanup"
 run = "ruby test/smoke_integration_test.rb"
+
+[tasks.install]
+description = "Install frozen backend/npm lockfiles and the pinned Chromium browser"
+run = "ruby scripts/install.rb"
+
+[tasks.check]
+description = "Run all mandatory gates in order, without fixing or staging sources"
+run = "ruby scripts/check.rb"
+
+[tasks."check:test"]
+description = "Exercise real controlled failures through the aggregate CLI"
+run = "ruby test/check_integration_test.rb"
+
+[tasks."contracts:generate"]
+dir = "contracts"
+run = "npm run generate"
+
+[tasks."contracts:check"]
+dir = "contracts"
+run = "npm run check"
+
+[tasks."backend:lint"]
+dir = "backend"
+run = "bundle _4.0.22_ exec rubocop"
+
+[tasks."backend:test"]
+run = "ruby scripts/smoke.rb --backend-test"
+
+[tasks."frontend:lint"]
+dir = "frontend"
+run = "npm run lint"
+
+[tasks."frontend:format"]
+dir = "frontend"
+run = "npm run format"
+
+[tasks."frontend:typecheck"]
+dir = "frontend"
+run = "npm run type-check -- --force"
+
+[tasks."frontend:test"]
+dir = "frontend"
+run = "npm test"
+
+[tasks."frontend:build"]
+dir = "frontend"
+run = "npm run build-only"
