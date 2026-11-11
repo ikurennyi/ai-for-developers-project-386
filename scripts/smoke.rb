@@ -4,8 +4,9 @@ require "net/http"
 require "securerandom"
 require "socket"
 require "tmpdir"
+require "uri"
 
-# Never reads development connection settings or invokes dev:stop.
+# Local mode ignores development URLs; explicit CI mode borrows only the service.
 class Smoke
   ROOT = File.expand_path("..", __dir__)
   IMAGE = "postgres:18.3-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7"
@@ -99,6 +100,30 @@ class Smoke
   def run
     stack = @mode == "--backend-test" ? "PostgreSQL + RSpec" : "PostgreSQL/Rails/Vitest Vite + Chromium"
     puts "Smoke #{@id}: temporary #{stack}"
+    if ENV["CI"] == "true"
+      @service_url = ENV.fetch("DATABASE_URL")
+      begin
+        url = URI.parse(@service_url)
+      rescue URI::InvalidURIError
+        raise "CI DATABASE_URL must be a valid PostgreSQL URL"
+      end
+      raise "CI DATABASE_URL must be a PostgreSQL URL without query or fragment" unless %w[postgres postgresql].include?(url.scheme) && url.host && !url.query && !url.fragment
+      @password = URI.decode_www_form_component(url.password.to_s)
+      command("database-create", "bundle", "exec", "ruby", File.join(ROOT, "scripts/test_database.rb"), "create", @database,
+        directory: File.join(ROOT, "backend"), env: { "SMOKE_SERVICE_URL" => @service_url })
+      @service_database_created = true
+      url.path = "/#{@database}"
+      @env["DATABASE_URL"] = url.to_s
+    else
+      start_postgres
+    end
+    @env["TEST_DATABASE_URL"] = @env.fetch("DATABASE_URL")
+    run_tests
+  ensure
+    cleanup
+  end
+
+  def start_postgres
     @password = password = SecureRandom.hex(24)
     command("postgres-start", "docker", "run", "--detach", "--rm", "--name", @id,
       "--cidfile", File.join(@directory, "container.id"),
@@ -116,7 +141,9 @@ class Smoke
     raise "unexpected PostgreSQL binding" unless binding.match?(/\A127\.0\.0\.1:\d+\z/)
     port = binding.split(":").last
     @env["DATABASE_URL"] = "postgresql://smoke:#{password}@127.0.0.1:#{port}/#{@database}"
-    @env["TEST_DATABASE_URL"] = @env.fetch("DATABASE_URL")
+  end
+
+  def run_tests
     backend = File.join(ROOT, "backend")
     probe = 'connection = ActiveRecord::Base.connection; raise "wrong database" unless connection.select_value("SELECT current_database()") == ENV.fetch("SMOKE_DATABASE"); raise "unexpected PostgreSQL version" unless connection.select_value("SHOW server_version").start_with?("18.3"); raise "connection failed" unless connection.select_value("SELECT 1") == 1; puts "PostgreSQL connection verified"'
     puts command("database-probe", "bundle", "exec", "rails", "runner", probe,
@@ -139,13 +166,15 @@ class Smoke
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
         "SMOKE_RUNTIME_DIR" => @directory })
-  ensure
-    cleanup
   end
 
   def cleanup
     failed = $!
     @active.reverse_each.to_a.each { |pid| stop(pid) }
+    if @service_database_created
+      command("database-drop", "bundle", "exec", "ruby", File.join(ROOT, "scripts/test_database.rb"), "drop", @database,
+        directory: File.join(ROOT, "backend"), env: { "SMOKE_SERVICE_URL" => @service_url })
+    end
     cidfile = File.join(@directory, "container.id")
     if File.exist?(cidfile)
       cid = File.read(cidfile).strip
@@ -163,11 +192,12 @@ class Smoke
       @logs.uniq.each do |path|
         next unless File.file?(path)
         text = File.readlines(path).last(35).join
-        text = text.gsub(@password, "[REDACTED]") if @password
+        text = text.gsub(@service_url, "[REDACTED]") if @service_url
+        text = text.gsub(@password, "[REDACTED]") if @password && !@password.empty?
         warn "--- #{File.basename(path)} ---\n#{text}"
       end
     end
-    puts "SMOKE_RESOURCES #{JSON.generate(container: @id, database: @database, pids: @children, directory: @directory)}"
+    puts "SMOKE_RESOURCES #{JSON.generate(container: @service_url ? nil : @id, database: @database, pids: @children, directory: @directory)}"
     FileUtils.remove_entry(@directory) if File.directory?(@directory)
   end
 end

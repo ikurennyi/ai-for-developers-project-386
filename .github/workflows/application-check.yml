@@ -61,6 +61,8 @@ jobs:
           PGDATABASE: scaffold_ci
         run: |
           mise exec -- bundle _4.0.22_ exec ruby -rpg -e 'PG.connect { |db| abort "wrong PostgreSQL version" unless db.exec("SHOW server_version").getvalue(0, 0).start_with?("18.3"); abort "SQL probe failed" unless db.exec("SELECT 1").getvalue(0, 0) == "1" }'
-      # The aggregate owns isolated, per-gate databases using this same image.
       - name: Run the same aggregate as local development
+        env:
+          CI: "true"
+          DATABASE_URL: postgresql://ci:ci-ephemeral@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/scaffold_ci
         run: mise run check

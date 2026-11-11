@@ -173,7 +173,7 @@ class Services
       warn "#{name} is not HTTP-ready; recent daemon logs:"
       warn run("mise", "daemons", "logs", name, "-n", "40", allow_failure: true).first
     end
-    _, db_ok = compose("exec", "-T", "postgres", "pg_isready", "-U", @env.fetch("POSTGRES_USER"), "-d", @env.fetch("POSTGRES_DB"), allow_failure: true)
+    _, db_ok = compose("exec", "-T", "postgres", "pg_isready", "-h", "127.0.0.1", "-U", @env.fetch("POSTGRES_USER"), "-d", @env.fetch("POSTGRES_DB"), allow_failure: true)
     unless db_ok
       healthy = false
       warn compose("logs", "--no-color", "--tail", "20", "postgres", allow_failure: true).first
@@ -229,7 +229,9 @@ class Services
     when "dev:stop"
       ownership
       # Both commands are attempted, but a failure is never reported as success.
-      daemon_output, daemon_ok = run("mise", "daemons", "stop", "backend", "frontend", allow_failure: true)
+      listing, = run("mise", "daemons", "ls", "--json")
+      active = JSON.parse(listing).select { |daemon| %w[backend frontend].include?(daemon.fetch("name")) && daemon["pid"] }
+      daemon_output, daemon_ok = active.empty? ? ["", true] : run("mise", "daemons", "stop", *active.map { |daemon| daemon.fetch("name") }, allow_failure: true)
       puts daemon_output
       puts compose("stop", "--timeout", "10", "postgres").first
       raise "Daemon stop failed; see output above" unless daemon_ok

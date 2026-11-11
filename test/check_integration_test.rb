@@ -1,21 +1,13 @@
 # Real failure probes through the public aggregate command; run in a dedicated checkout.
 require "open3"
-require "digest"
 require "json"
+require_relative "resource_assertions"
+require_relative "source_snapshot"
 
 ROOT = File.expand_path("..", __dir__)
 
 def assert(condition, message)
   raise message unless condition
-end
-
-def snapshot
-  paths, status = Open3.capture2("git", "ls-files", "--cached", "--others", "--exclude-standard", "-z", chdir: ROOT)
-  assert(status.success?, "cannot enumerate source files")
-  files = paths.split("\0").to_h { |path| [path, Digest::SHA256.file(File.join(ROOT, path)).hexdigest] }
-  index, status = Open3.capture2("git", "ls-files", "--stage", "-z", chdir: ROOT)
-  assert(status.success?, "cannot inspect index")
-  [files, index]
 end
 
 RESOURCES = []
@@ -28,19 +20,7 @@ def run_check
   output.lines.grep(/^SMOKE_RESOURCES /).each do |line|
     resource = JSON.parse(line.delete_prefix("SMOKE_RESOURCES "))
     RESOURCES << resource
-    _, inspect_status = Open3.capture2e("docker", "inspect", resource.fetch("container"))
-    assert(!inspect_status.success?, "temporary database survived")
-    assert(!File.exist?(resource.fetch("directory")), "runtime directory survived")
-    resource.fetch("pids").each do |pid|
-      [pid, -pid].each do |target|
-        begin
-          Process.kill(0, target)
-          raise "temporary process/group #{target} survived"
-        rescue Errno::ESRCH
-          # The invocation must remove only its own children.
-        end
-      end
-    end
+    assert_clean(resource, service_url: ENV["DATABASE_URL"])
   end
   [output, status]
 end
@@ -77,6 +57,7 @@ probe("frontend/index.html", File.read(File.join(ROOT, "frontend/index.html")).s
   output, status = run_check
   assert(status.success? && output.include?("All mandatory checks passed"), "clean repeated check failed")
 end
-assert(RESOURCES.map { |resource| resource.fetch("container") }.uniq.size == RESOURCES.size, "shared container identity")
+containers = RESOURCES.filter_map { |resource| resource.fetch("container") }
+assert(containers.uniq.size == containers.size, "shared container identity")
 assert(RESOURCES.map { |resource| resource.fetch("database") }.uniq.size == RESOURCES.size, "shared database identity")
 puts "All 13 failure probes and two clean repeated checks passed; resources unique and removed"

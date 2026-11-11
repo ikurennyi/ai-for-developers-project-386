@@ -24,5 +24,13 @@ class WorkflowTest < Minitest::Test
     assert_includes runs, "mise run commits:check"
     assert_includes runs, "mise run ci:validate"
     refute_includes runs, "${{"
+    aggregate = steps.find { |step| step["run"] == "mise run check" }
+    assert_equal "true", aggregate.fetch("env").fetch("CI")
+    assert_equal "postgresql://ci:ci-ephemeral@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/scaffold_ci", aggregate.fetch("env").fetch("DATABASE_URL")
+  end
+
+  def test_compose_waits_for_final_tcp_server
+    health = YAML.safe_load_file(File.join(ROOT, "compose.yml")).fetch("services").fetch("postgres").fetch("healthcheck")
+    assert_includes health.fetch("test").last, "pg_isready -h 127.0.0.1"
   end
 end

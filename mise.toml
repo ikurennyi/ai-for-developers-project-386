@@ -55,6 +55,14 @@ run = "ruby scripts/services.rb dev:stop"
 description = "Test the lifecycle CLI validation boundary (no Docker required)"
 run = "ruby test/services_test.rb"
 
+[tasks."services:fresh-test"]
+description = "Probe final TCP readiness from a fresh dedicated checkout/volume"
+run = "ruby test/fresh_database_integration_test.rb"
+
+[tasks."ci:database-test"]
+description = "Simulate the CI PostgreSQL service locally, including parallel/failing gates"
+run = "ruby test/ci_database_integration_test.rb"
+
 [tasks.smoke]
 description = "Run Chromium against temporary isolated Rails/PostgreSQL (no dev services)"
 run = "ruby scripts/smoke.rb"

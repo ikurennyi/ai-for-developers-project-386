@@ -39,10 +39,13 @@ The frontend lockfile's Playwright installs Chromium **and system dependencies**
 The final command is exactly the local `mise run check`.
 
 The PostgreSQL service uses the exact version/digest in Compose and receives a
-real SQL/version preflight through the locked pg gem. The aggregate still owns
-fresh per-gate containers of the same image: it deliberately ignores ambient
-database URLs. This small service redundancy preserves the already-proven
-local/CI isolation and cleanup instead of introducing a different CI runner.
+real SQL/version preflight through the locked pg gem. The aggregate receives
+`CI=true` and the service's `DATABASE_URL`; both RSpec and Chromium gates create
+unique per-run databases on that actual service. Each independently checks SQL,
+database identity and version, then drops only its database. Gates do not start
+extra Docker containers in CI. Local mode retains isolated per-gate containers.
+`mise run ci:database-test` simulates this service locally, including concurrent
+gates, real failures and the unchanged aggregate command; it is not an Actions run.
 
 `ci:validate` runs pinned **actionlint 1.7.12** against only our workflow, then
 checks the workflow's security/environment policy. It does not validate, edit or
