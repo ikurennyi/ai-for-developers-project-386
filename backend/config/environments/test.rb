@@ -4,6 +4,9 @@
 # and recreated between test runs. Don't rely on the data there!
 
 Rails.application.configure do
+  # Temporary smoke processes keep logs in their own captured stdout, not a shared file.
+  config.logger = ActiveSupport::Logger.new($stdout) if ENV["RAILS_LOG_TO_STDOUT"] == "1"
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # While tests run files are not watched, reloading is not necessary.
