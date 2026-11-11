@@ -7,10 +7,10 @@
 | Reproduce documented installation and dev lifecycle | Passed locally |
 | Full local aggregate and repeated clean runs | Passed locally |
 | Agent initialization / trimmed instructions | Supported `init` command handler invoked; guided update completed |
-| Independent standards/spec review | Findings received at `b2274a8`; resolutions below await orchestrator re-review |
-| Review fixes and post-review repeated `check` | CI-service simulation and two clean local repeats passed; evidence below |
+| Independent standards/spec review | Final reviews at `35cea18`: zero standards findings and zero actionable spec findings |
+| Review fixes and post-review repeated `check` | Two full local aggregate runs passed after both final reviews; source/index bytes unchanged |
 | Green Linux / GitHub Actions | **Unconfirmed**; no authorized push or run |
-| #12 closure | **Open**, awaiting review/fixes/repeated check |
+| #12 closure | **Open**, awaiting merger integration and closure |
 
 This is local readiness evidence, not completion of parent #1. Parent issue and
 protected Hexlet workflow were not changed. No push or PR was created.
@@ -165,9 +165,51 @@ simulation is not Linux or GitHub Actions evidence. Raw logs under the approved
   local-repeat evidence alongside the other local logs. No external CI result
   is inferred from them.
 
+## Final independent reviews and repeated acceptance — `35cea18`
+
+Both independent final reviewers inspected `d236b05...35cea18`, emphasizing
+`b2274a8...35cea18`, after review-fix integration:
+
+- **Standards:** zero documented-rule findings; no remaining reportable heuristic
+  concerns. TCP readiness, shared cleanup assertions and mandatory tooling install
+  resolved the earlier findings.
+- **Spec:** zero actionable findings. TCP readiness, actual CI-service database
+  consumption and registered `init` handler invocation were independently verified.
+  Initialization was invoked through the API as recorded above; interactive typing
+  of `/init` is not claimed.
+
+The reviewers performed read-only reviews, not fresh test runs. Their reports are
+`opencode/scaffold-context/review-standards-final.md` and
+`review-spec-final.md`; `review-merge-report.md` records separate integration
+validation at `35cea18`, including actual initialization API-message inspection.
+These external files are local evidence, not committed or portable CI artifacts.
+
+After both final reviews, a fresh acceptance implementer created branch
+`docs/final-review-acceptance` and worktree
+`/private/var/folders/p9/6byhfhnd78sdncx7j259p8hw0000gn/T/opencode/scaffold-final-review-acceptance`
+at `35cea18f4f3a910ce2d48c555b52421e095319cf`, verifying integration ancestry.
+On 2026-11-11, `mise run install` succeeded with frozen dependencies (the same
+13 moderate frontend audit advisories remain; no audit fix was run).
+
+Two subsequent actual `mise run check` invocations both exited zero: contracts
+and reproducibility/drift/SDK checks, RuboCop (35 files), frontend lint/format/
+strict types, **9 RSpec examples**, **3 jsdom tests**, **1 real Chromium test**
+with independent PostgreSQL SQL/version probes, and production build. vacuum
+reported zero errors/warnings and two informational findings. Before/after SHA-256
+snapshots matched for all **152 tracked/unignored source files**, the raw Git
+index bytes and index entries on each run. Ignored dependency/build caches are
+not source edits. No new behavior or tests were introduced; TDD guidance was
+applied as evidence review at the existing public aggregate seam.
+
+Logs and snapshots are retained locally under `opencode/scaffold-context/`:
+`final-acceptance-install.log`, `final-acceptance-check-1.log`,
+`final-acceptance-check-2.log` and `final-acceptance-check-snapshots.json`.
+
 ## Handoff requirements
 
-The orchestrator must integrate sequentially, re-review standards/spec fixes and
-repeat `mise run check` after integration before closing #12. #12 remains open.
-External GitHub Actions is still **unconfirmed** and requires separately
-authorized execution. Parent #1 remains open and unchanged.
+Final independent review and post-review repeated local checks are complete.
+The merger must integrate this documentation update sequentially and repeat
+`mise run check` after integration before closing #12; this implementer leaves
+#12 open. External Linux/GitHub Actions is still **unconfirmed** and requires
+separately authorized execution. No push, PR or Actions dispatch was performed.
+Parent #1 remains open and unchanged; the protected Hexlet workflow is unchanged.
