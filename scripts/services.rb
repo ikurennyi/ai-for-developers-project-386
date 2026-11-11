@@ -29,13 +29,17 @@ class Services
     %w[BACKEND_PORT FRONTEND_PORT POSTGRES_PORT].each do |key|
       raise "#{key} must be an integer port from 1024 to 65535" unless @env[key].match?(/\A\d+\z/) && (1024..65535).cover?(@env[key].to_i)
     end
-    raise "All three service ports must differ" unless @env.values_at("BACKEND_PORT", "FRONTEND_PORT", "POSTGRES_PORT").uniq.size == 3
+    raise "All three service ports must differ" unless @env.values_at("BACKEND_PORT", "FRONTEND_PORT", "POSTGRES_PORT").map(&:to_i).uniq.size == 3
     %w[POSTGRES_USER POSTGRES_DB].each do |key|
       raise "#{key} must be a lowercase PostgreSQL identifier (maximum 63 bytes)" unless @env[key].match?(/\A[a-z][a-z0-9_]{0,62}\z/)
     end
     raise "POSTGRES_DB must contain this worktree's ID (with underscores)" unless @env["POSTGRES_DB"].include?(WORKTREE_ID.tr("-", "_"))
     urls = %w[DATABASE_URL TEST_DATABASE_URL].map do |key|
-      url = URI.parse(@env[key])
+      begin
+        url = URI.parse(@env[key])
+      rescue URI::InvalidURIError
+        raise "#{key} must be a valid PostgreSQL URL"
+      end
       valid = %w[postgres postgresql].include?(url.scheme) && url.host == "127.0.0.1" &&
         url.port == @env["POSTGRES_PORT"].to_i && URI.decode_www_form_component(url.user.to_s) == @env["POSTGRES_USER"] &&
         URI.decode_www_form_component(url.password.to_s) == @env["POSTGRES_PASSWORD"] && !url.query && !url.fragment &&
@@ -118,11 +122,15 @@ class Services
   def db_up
     ownership
     output, = compose("ps", "--status", "running", "-q", "postgres")
-    port_free("POSTGRES_PORT") if output.strip.empty?
+    new_database = output.strip.empty?
+    port_free("POSTGRES_PORT") if new_database
     persist
+    attempted_start = true
     puts compose("up", "-d", "--wait", "--wait-timeout", "45", "postgres").first
+    new_database
   rescue StandardError
     warn compose("logs", "--no-color", "--tail", "40", "postgres", allow_failure: true).first
+    compose("stop", "--timeout", "10", "postgres", allow_failure: true) if attempted_start && new_database
     raise
   end
 
@@ -154,14 +162,23 @@ class Services
   def diagnostics
     puts "Worktree: #{ROOT}\nProject: #{@env['COMPOSE_PROJECT_NAME']}"
     puts "Ports: Rails=#{@env['BACKEND_PORT']} Vite=#{@env['FRONTEND_PORT']} PostgreSQL=#{@env['POSTGRES_PORT']}"
-    puts compose("ps", "-a", allow_failure: true).first
-    puts run("mise", "daemons", "ls", allow_failure: true).first
+    output, compose_ok = compose("ps", "-a", allow_failure: true)
+    puts output
+    output, daemons_ok = run("mise", "daemons", "ls", allow_failure: true)
+    puts output
+    healthy = compose_ok && daemons_ok
     %w[backend frontend].each do |name|
       next if ready(name)
+      healthy = false
       warn "#{name} is not HTTP-ready; recent daemon logs:"
       warn run("mise", "daemons", "logs", name, "-n", "40", allow_failure: true).first
     end
-    warn compose("logs", "--no-color", "--tail", "20", "postgres", allow_failure: true).first
+    _, db_ok = compose("exec", "-T", "postgres", "pg_isready", "-U", @env.fetch("POSTGRES_USER"), "-d", @env.fetch("POSTGRES_DB"), allow_failure: true)
+    unless db_ok
+      healthy = false
+      warn compose("logs", "--no-color", "--tail", "20", "postgres", allow_failure: true).first
+    end
+    healthy
   end
 
   def execute(command, name = nil)
@@ -192,16 +209,23 @@ class Services
       prepare
     when "dev:start"
       %w[BACKEND_PORT FRONTEND_PORT].each { |key| port_free(key) }
-      db_up
-      prepare
       begin
+        new_database = db_up
+        prepare
         puts run("mise", "daemons", "start", "backend", "frontend").first
       rescue StandardError
-        diagnostics
-        run("mise", "daemons", "stop", "backend", "frontend", allow_failure: true)
+        begin
+          diagnostics if File.exist?(CONFIG)
+        rescue StandardError => diagnostic_error
+          warn "Diagnostics failed: #{diagnostic_error.message}"
+        ensure
+          run("mise", "daemons", "stop", "backend", "frontend", allow_failure: true)
+          compose("stop", "--timeout", "10", "postgres", allow_failure: true) if new_database
+        end
         raise
       end
-    when "dev:status" then diagnostics
+    when "dev:status"
+      raise "One or more worktree services are not ready" unless diagnostics
     when "dev:stop"
       ownership
       # Both commands are attempted, but a failure is never reported as success.

@@ -1,3 +1,5 @@
+# Reuse the version installed by backend/Gemfile.lock; no root gem project.
+gem "minitest", "6.1.0"
 require "minitest/autorun"
 require "open3"
 require "rbconfig"
@@ -35,5 +37,19 @@ class ServicesTest < Minitest::Test
       refute status.success?
       assert_includes out + err, "BACKEND_PORT #{port} is occupied"
     end
+  end
+
+  def test_malformed_url_does_not_disclose_credentials
+    secret = "do-not-print-this-password"
+    out, err, status = invoke("dev:validate", config.merge("DATABASE_URL" => "postgresql://#{secret} with spaces"))
+    refute status.success?
+    refute_includes out + err, secret
+    assert_includes out + err, "DATABASE_URL must be a valid PostgreSQL URL"
+  end
+
+  def test_numerically_duplicate_ports_are_rejected
+    out, err, status = invoke("dev:validate", config.merge("FRONTEND_PORT" => "043101"))
+    refute status.success?
+    assert_includes out + err, "All three service ports must differ"
   end
 end
