@@ -182,6 +182,8 @@ class Smoke
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("create-meeting-type", "node", "e2e/create-meeting-type.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("calendar-navigation", "node", "e2e/calendar-navigation.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     # A fresh application process must read the same persisted offers.
     offers_url = URI("http://127.0.0.1:#{backend_port}/api/v1/meeting-types")
     persisted_offers = Net::HTTP.get(offers_url)
@@ -194,6 +196,12 @@ class Smoke
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
         "SMOKE_RUNTIME_DIR" => @directory })
+    puts command("occupy-calendar", "bundle", "exec", "rails", "runner",
+      "Occupancy.create!(starts_at: Time.current - 1.day, ends_at: Time.current + 15.days)", directory: backend)
+    puts command("chromium-occupied", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
+      timeout: 120, directory: File.join(ROOT, "frontend"),
+      env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
+        "SMOKE_RUNTIME_DIR" => @directory, "SMOKE_OCCUPIED_CALENDAR" => "1" })
     puts command("hide-meeting-types", "bundle", "exec", "rails", "runner",
       "MeetingType.update_all(published: false)", directory: backend)
     puts command("chromium-empty", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
