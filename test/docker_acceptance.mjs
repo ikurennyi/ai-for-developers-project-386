@@ -17,6 +17,8 @@ const origin = `https://localhost:${config.HTTPS_PORT}`
 const headers = { 'X-Calendar-Request': '1' }
 const docker = (...args) => execFileSync('ruby', ['scripts/docker.rb', ...args], {
   cwd: root, stdio: 'inherit', timeout: 240000,
+  // A caller may have another worktree's database variables exported.
+  env: { ...process.env, POSTGRES_PASSWORD: randomBytes(32).toString('hex') },
 })
 const browser = await chromium.launch({ headless: true })
 try {
@@ -103,6 +105,9 @@ try {
   docker('restart')
   await verifyPersistence()
   docker('recreate')
+  await verifyPersistence()
+  docker('stop')
+  docker('up')
   await verifyPersistence()
   console.log('Docker booking/admin edit, restart and recreation retain snapshots, instants, publication, initialization edits and shared occupancy')
 

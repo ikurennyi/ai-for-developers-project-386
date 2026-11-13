@@ -38,6 +38,8 @@ No shared/public password is supplied in the image or configuration.
 `POSTGRES_PASSWORD` must remain URL-safe (the generated hexadecimal value is).
 `SECRET_KEY_BASE`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `POSTGRES_PASSWORD` and
 `HTTPS_PORT` are required; there are no secret defaults.
+The helper treats that private file as authoritative, overriding inherited
+variables from other worktrees instead of accidentally reusing their credentials.
 
 The app runs as a non-root user. Its entrypoint runs `rails db:prepare` and
 `rails db:seed` before Puma, failing startup if migrations/initialization fail.
