@@ -99,4 +99,43 @@ class CommitRangesTest < Minitest::Test
     assert_includes out, head
     refute_includes out, before
   end
+
+  def test_missing_push_before_commit_is_fetched_before_range_validation
+    remote = File.join(@tmp, "origin.git")
+    system("git", "init", "--bare", "--quiet", remote, exception: true)
+    git("remote", "add", "origin", remote)
+
+    before = commit("old invalid release branch commit")
+    git("checkout", "--quiet", "--detach", @baseline)
+    head = commit("chore(main): release 0.1.0")
+    git("push", "--quiet", "origin", "#{before}:refs/heads/prior", "#{head}:refs/heads/current")
+
+    checkout = File.join(@tmp, "checkout")
+    system("git", "clone", "--quiet", "--no-local", "--single-branch", "--branch", "current", remote, checkout, exception: true)
+    FileUtils.cp_r(File.join(@tmp, "tooling"), checkout)
+    refute system("git", "cat-file", "-e", "#{before}^{commit}", chdir: checkout, out: File::NULL, err: File::NULL)
+
+    event = {before: before, after: head, ref: "refs/heads/release-please--branches--main"}
+    path = File.join(checkout, "push-event.json")
+    File.write(path, JSON.generate(event))
+    env = @env.merge("GITHUB_EVENT_NAME" => "push", "GITHUB_EVENT_PATH" => path)
+    out, err, status = Open3.capture3(env, "node", "tooling/fetch-push-before.mjs", chdir: checkout)
+    assert status.success?, out + err
+    assert system("git", "cat-file", "-e", "#{before}^{commit}", chdir: checkout, out: File::NULL, err: File::NULL)
+
+    out, err, status = Open3.capture3(env, "node", "tooling/check-commits.mjs", chdir: checkout)
+    assert status.success?, out + err
+    assert_includes out, head
+    refute_includes out, before
+  end
+
+  def test_missing_push_before_commit_fetch_failure_is_not_ignored
+    path = File.join(@tmp, "push-event.json")
+    File.write(path, JSON.generate({before: "f" * 40, after: @baseline}))
+    env = @env.merge("GITHUB_EVENT_NAME" => "push", "GITHUB_EVENT_PATH" => path)
+
+    out, err, status = Open3.capture3(env, "node", "tooling/fetch-push-before.mjs", chdir: @tmp)
+
+    refute status.success?, out + err
+  end
 end

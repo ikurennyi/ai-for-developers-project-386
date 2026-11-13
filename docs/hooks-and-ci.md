@@ -61,6 +61,8 @@ shell interpolation. Full history (`fetch-depth: 0`) is required:
 - PR: actual head commits not reachable from the event's base SHA; never the
   synthetic checkout merge message.
 - Existing push, including force pushes: after commits not reachable from before.
+  Before validation, CI fetches the exact push `before` SHA when it is absent
+  from the full checkout (for example, after release-please rebases its branch).
 - New branch/tag: exclude the fetched default branch when present. First
   publication of the default branch falls back to the adoption boundary.
 - Deleted ref: no new messages. Unsupported events, invalid/missing SHAs or
@@ -69,10 +71,9 @@ shell interpolation. Full history (`fetch-depth: 0`) is required:
 All ranges additionally exclude the immutable pre-hooks scaffold boundary
 `e3a8384ba908b4419e1ef6a349707645bebc01ae` and its ancestors, recorded in
 `tooling/commitlint-baseline`. Do not move it forward to bypass a bad new message.
-If a force-push before object is unavailable even with full history, fetch that
-exact event SHA before retrying; the checker intentionally fails rather than
-guessing. Each selected message goes through the real commitlint CLI; its normal
-merge/revert ignores remain enabled.
+If fetching a force-push before object fails, CI intentionally fails rather than
+guessing; repair repository access/history and rerun. Each selected message goes
+through the real commitlint CLI; its normal merge/revert ignores remain enabled.
 
 ## Local readiness versus external acceptance
 
