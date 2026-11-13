@@ -34,14 +34,16 @@ and the existing token/name/email/notes log filters cover retry requests.
 ## Verification
 
 - `booking_retry_spec.rb`: original committed response, changed/hidden offer and
-  elapsed window, contact/capability privacy, malformed capabilities, OpenAPI.
+  elapsed window, contact/capability privacy, malformed capabilities,
+  authenticated permanent deletion → logout → guest replay rejection, OpenAPI.
 - `concurrent_bookings_spec.rb`: three simultaneous independent PostgreSQL
   connections for both uncommitted and committed attempts; forced overlap at the
   persistent lock boundary; retry after an actual confirmation rollback.
 - `frontend/e2e/booking-retry.mjs`, included in `mise run smoke`: forwards to real
   Rails, waits for a committed response, then drops only the browser response;
   checks the uncertain message, retained form, refresh, opener privacy, recovery
-  of the original identifier and a separately intended next booking.
+  of the original identifier and a separately intended next booking, including
+  an interrupted JSON body after successful response headers.
 
 Run `mise run check` for these and the existing acceptance gates. Local results
 do not establish external GitHub Actions status.

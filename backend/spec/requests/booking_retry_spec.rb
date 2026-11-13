@@ -59,19 +59,30 @@ RSpec.describe "Private booking retry", type: :request do
     expect(Occupancy.count).to eq(0)
   end
 
-  it "does not recreate a permanently removed booking when its uncertain attempt is retried" do
+  it "does not recreate or disclose a booking after authenticated permanent deletion and a guest retry" do
+    previous = ENV.to_h.slice("ADMIN_USERNAME", "ADMIN_PASSWORD")
+    ENV["ADMIN_USERNAME"] = "retry-deletion-owner"
+    ENV["ADMIN_PASSWORD"] = "retry-deletion-test-password!"
     post "/api/v1/meeting-types/retry-discussion/bookings", params: payload, as: :json
-    booking = Booking.find(JSON.parse(response.body).fetch("id"))
-    # Fixture the permanent-removal outcome; replay is exercised through HTTP.
-    occupancy = booking.occupancy
-    booking.delete
-    occupancy.delete
+    expect(response).to have_http_status(:created)
+    id = JSON.parse(response.body).fetch("id")
+    post "/api/v1/admin/session",
+      params: { username: ENV.fetch("ADMIN_USERNAME"), password: ENV.fetch("ADMIN_PASSWORD") },
+      headers: { "X-Calendar-Request" => "1" }, as: :json
+    expect(response).to have_http_status(:ok)
+    delete "/api/v1/admin/bookings/#{id}", headers: { "X-Calendar-Request" => "1" }
+    expect(response).to have_http_status(:no_content)
+    OpenapiContract.validate!(request, response)
+    delete "/api/v1/admin/session", headers: { "X-Calendar-Request" => "1" }
+    expect(response).to have_http_status(:no_content)
     post "/api/v1/meeting-types/retry-discussion/bookings", params: payload, as: :json
     expect(response).to have_http_status(:conflict)
     expect(JSON.parse(response.body)).to include("code" => "attempt_deleted")
-    expect(response.body).not_to include("private@example.com", "Private notes")
+    expect(response.body).not_to include(id, "Private Guest", "private@example.com", "Private notes")
     OpenapiContract.validate!(request, response)
     expect(Booking.count).to eq(0)
     expect(Occupancy.count).to eq(0)
+  ensure
+    %w[ADMIN_USERNAME ADMIN_PASSWORD].each { |key| ENV[key] = previous[key] }
   end
 end

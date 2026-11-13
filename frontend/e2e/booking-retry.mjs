@@ -78,13 +78,29 @@ try {
   )
   await page.getByLabel('Your name', { exact: true }).fill('Next Guest')
   await page.getByLabel('Email address', { exact: true }).fill('next@example.com')
+  let nextCommitted
+  let nextToken
+  await page.route('**/api/v1/meeting-types/*/bookings', async (route) => {
+    nextToken = route.request().postDataJSON().attemptToken
+    const result = await route.fetch()
+    assert.equal(result.status(), 201)
+    nextCommitted = await result.json()
+    // Headers can arrive before a response is interrupted. The generated SDK
+    // then returns a parsing error together with the successful HTTP status.
+    await route.fulfill({ status: 201, contentType: 'application/json', body: '{"id":' })
+  })
+  await page.getByRole('button', { name: 'Confirm booking', exact: true }).click()
+  await page.getByRole('alert').filter({ hasText: 'We couldn’t confirm the result.' }).waitFor()
+  assert.notEqual(nextToken, firstToken)
+  await page.unroute('**/api/v1/meeting-types/*/bookings')
   const nextPromise = page.waitForResponse(
     (result) => result.request().method() === 'POST' && result.url().endsWith('/bookings'),
   )
   await page.getByRole('button', { name: 'Confirm booking', exact: true }).click()
   const nextResponse = await nextPromise
-  assert.notEqual(nextResponse.request().postDataJSON().attemptToken, firstToken)
-  assert.notEqual((await nextResponse.json()).id, committed.id)
+  assert.equal(nextResponse.request().postDataJSON().attemptToken, nextToken)
+  assert.deepEqual(await nextResponse.json(), nextCommitted)
+  assert.notEqual(nextCommitted.id, committed.id)
   console.log(
     'Booking retry: real committed lost response, refresh, private recovery and new attempt passed.',
   )

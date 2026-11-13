@@ -22,7 +22,15 @@ export async function confirmGuestBooking(
   // Persist before sending: refresh during the request is also uncertain.
   saveBookingAttempt(attempt)
   const result = await confirmBooking({ path: { slug }, body: attempt.body })
-  if (!result.response || result.response.status >= 500) throw new Error('Unconfirmed result')
+  if (
+    !result.response ||
+    result.response.status >= 500 ||
+    (result.error &&
+      (![404, 409, 422].includes(result.response.status) ||
+        typeof result.error.message !== 'string'))
+  ) {
+    throw new Error('Unconfirmed result')
+  }
   // Only definitive rejections allow a new logical attempt. Successful state is
   // cleared together with the draft when the private confirmation is saved.
   if (result.error) saveBookingAttempt()
