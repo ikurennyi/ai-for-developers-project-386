@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesResponses } from './types.gen';
+import type { GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,50 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Revoke the current administrator session
+ *
+ * Immediately revokes the cookie's session. Requires X-Calendar-Request: 1; safe to repeat.
+ */
+export const logoutAdmin = <ThrowOnError extends boolean = false>(options: Options<LogoutAdminData, ThrowOnError>): RequestResult<LogoutAdminResponses, LogoutAdminErrors, ThrowOnError> => (options.client ?? client).delete<LogoutAdminResponses, LogoutAdminErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/session',
+    ...options
+});
+
+/**
+ * Read the current administrator session
+ *
+ * Requires the session cookie; never extends expiry. Responses are not cacheable.
+ */
+export const getAdminSession = <ThrowOnError extends boolean = false>(options?: Options<GetAdminSessionData, ThrowOnError>): RequestResult<GetAdminSessionResponses, GetAdminSessionErrors, ThrowOnError> => (options?.client ?? client).get<GetAdminSessionResponses, GetAdminSessionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/session',
+    ...options
+});
+
+/**
+ * Log in to the single administrator account
+ *
+ * Creates a 24-hour session. Requires X-Calendar-Request: 1 and same-origin browser requests. Sets an HttpOnly cookie. Credentials errors are always generic. Ten attempts per IP per 15 minutes, shared through PostgreSQL.
+ */
+export const loginAdmin = <ThrowOnError extends boolean = false>(options: Options<LoginAdminData, ThrowOnError>): RequestResult<LoginAdminResponses, LoginAdminErrors, ThrowOnError> => (options.client ?? client).post<LoginAdminResponses, LoginAdminErrors, ThrowOnError>({
+    url: '/admin/session',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Get API health

@@ -5,6 +5,47 @@ export type ClientOptions = {
 };
 
 /**
+ * The single administrator's current session. Expiry never slides.
+ */
+export type AdminSession = {
+    /**
+     * Configured administrator username.
+     */
+    username: string;
+    /**
+     * Absolute session expiry, 24 hours after login.
+     */
+    expiresAt: string;
+    [key: string]: unknown;
+};
+
+/**
+ * An English API error without credentials or private data.
+ */
+export type AuthError = {
+    /**
+     * Safe explanation of the failure.
+     */
+    message: string;
+    [key: string]: unknown;
+};
+
+/**
+ * Initial credentials are configured by the operator, not public defaults.
+ */
+export type Credentials = {
+    /**
+     * Administrator username.
+     */
+    username: string;
+    /**
+     * Administrator password.
+     */
+    password: string;
+    [key: string]: unknown;
+};
+
+/**
  * API process health; does not imply database readiness.
  */
 export type Health = {
@@ -52,6 +93,104 @@ export type MeetingTypeList = {
     meetingTypes: Array<MeetingType>;
     [key: string]: unknown;
 };
+
+export type LogoutAdminData = {
+    body?: never;
+    headers: {
+        /**
+         * Required custom header protecting against cross-origin form submissions.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/session';
+};
+
+export type LogoutAdminErrors = {
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+};
+
+export type LogoutAdminError = LogoutAdminErrors[keyof LogoutAdminErrors];
+
+export type LogoutAdminResponses = {
+    /**
+     * There is no content to send for this request, but the headers may be useful.
+     */
+    204: void;
+};
+
+export type LogoutAdminResponse = LogoutAdminResponses[keyof LogoutAdminResponses];
+
+export type GetAdminSessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/session';
+};
+
+export type GetAdminSessionErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type GetAdminSessionError = GetAdminSessionErrors[keyof GetAdminSessionErrors];
+
+export type GetAdminSessionResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminSession;
+};
+
+export type GetAdminSessionResponse = GetAdminSessionResponses[keyof GetAdminSessionResponses];
+
+export type LoginAdminData = {
+    /**
+     * The operator-configured username and password.
+     */
+    body: Credentials;
+    headers: {
+        /**
+         * Required custom header; cross-origin browsers must preflight and are not granted CORS access.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/session';
+};
+
+export type LoginAdminErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * Ten login attempts per IP per 15-minute window have been used.
+     */
+    429: AuthError;
+};
+
+export type LoginAdminError = LoginAdminErrors[keyof LoginAdminErrors];
+
+export type LoginAdminResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminSession;
+};
+
+export type LoginAdminResponse = LoginAdminResponses[keyof LoginAdminResponses];
 
 export type GetHealthData = {
     body?: never;
