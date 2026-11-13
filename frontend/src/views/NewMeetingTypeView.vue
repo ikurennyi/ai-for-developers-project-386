@@ -1,19 +1,27 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { onBeforeRouteLeave, RouterLink, useRoute, useRouter } from 'vue-router'
+import {
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+  RouterLink,
+  useRoute,
+  useRouter,
+  type RouteLocationNormalized,
+} from 'vue-router'
 import {
   createAdminMeetingType,
   getAdminMeetingType,
   updateAdminMeetingType,
   type MeetingTypeFieldErrors,
 } from '../generated/sdk'
-import { adminRequestHeaders, requireAdminLogin } from '../admin/session'
+import { adminRequestHeaders, isAdminSessionRecovery, requireAdminLogin } from '../admin/session'
+import { discardAdminForm, recoverAdminForm, retainAdminForm } from '../admin/formRecovery'
 
 const router = useRouter()
 const route = useRoute()
 const id = typeof route.params.id === 'string' ? route.params.id : ''
 const editing = !!id
-const draftKey = editing ? `calendar-edit-meeting-type-${id}` : 'calendar-new-meeting-type'
+const formPath = route.path
 const initial = { name: '', description: '', duration: '', slug: '' }
 const form = reactive({ ...initial })
 const dirty = computed(() => JSON.stringify(form) !== JSON.stringify(initial))
@@ -80,7 +88,7 @@ async function save() {
     }
     if (!result.data) throw new Error('Save failed')
     saved = true
-    sessionStorage.removeItem(draftKey)
+    discardAdminForm()
     await router.push({ name: 'admin-links' })
   } catch {
     error.value = 'Unable to save the meeting type. Your fields are unchanged. Please try again.'
@@ -89,15 +97,19 @@ async function save() {
   }
 }
 
-onBeforeRouteLeave((to) => {
-  if (to.name === 'admin-login') {
-    if (dirty.value) sessionStorage.setItem(draftKey, JSON.stringify(form))
+function leaveForm(to: RouteLocationNormalized) {
+  if (to.name === 'admin-login' && isAdminSessionRecovery()) {
+    if (dirty.value) retainAdminForm(formPath, form)
     return true
   }
   if (!saved && dirty.value && !window.confirm('Discard unsaved meeting type changes?'))
     return false
-  sessionStorage.removeItem(draftKey)
+  discardAdminForm()
   return true
+}
+onBeforeRouteLeave(leaveForm)
+onBeforeRouteUpdate((to) => {
+  if (to.path !== formPath) return leaveForm(to)
 })
 function beforeUnload(event: BeforeUnloadEvent) {
   if (dirty.value && !saved) event.preventDefault()
@@ -125,20 +137,8 @@ async function load() {
 
 onMounted(async () => {
   if (editing) await load()
-  const stored = sessionStorage.getItem(draftKey)
-  if (stored) {
-    try {
-      const draft: unknown = JSON.parse(stored)
-      if (typeof draft === 'object' && draft !== null) {
-        for (const key of ['name', 'description', 'duration', 'slug'] as const) {
-          const value: unknown = Reflect.get(draft, key)
-          if (typeof value === 'string') form[key] = value
-        }
-      }
-    } catch {
-      sessionStorage.removeItem(draftKey)
-    }
-  }
+  const stored = recoverAdminForm(formPath)
+  if (stored) Object.assign(form, stored)
   window.addEventListener('beforeunload', beforeUnload)
 })
 onUnmounted(() => window.removeEventListener('beforeunload', beforeUnload))

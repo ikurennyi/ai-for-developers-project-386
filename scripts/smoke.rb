@@ -212,6 +212,12 @@ class Smoke
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
         "SMOKE_RUNTIME_DIR" => @directory, "SMOKE_EMPTY_MEETING_TYPES" => "1" })
+    # Independent authentication scenario: do not inherit the preceding
+    # scenarios' per-IP login budget.
+    puts command("admin-recovery-fixtures", "bundle", "exec", "rails", "runner",
+      "AdminLoginLimit.delete_all", directory: backend)
+    puts command("admin-form-recovery", "node", "e2e/admin-form-recovery.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
   end
 
   def cleanup
