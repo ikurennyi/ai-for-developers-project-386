@@ -134,7 +134,10 @@ async function load() {
       (start.value && !selectedInterval.value) ||
       (isForm.value && !selectedInterval.value)
     ) {
-      notice.value = 'This time is no longer available. Please choose another time.'
+      const invalidTime = 'This time is no longer available. Please choose another time.'
+      notice.value = notice.value.startsWith('Meeting details changed.')
+        ? `Meeting details changed. Please review the current details before confirming again. ${invalidTime}`
+        : invalidTime
       await router.replace(
         calendarLocation(selectedDay.value?.workingDay ? { date: date.value } : {}),
       )
@@ -160,6 +163,25 @@ function continueToForm() {
     params: { slug: route.params.slug },
     query: { date: date.value, start: start.value },
   })
+}
+async function recover(
+  reason: 'occupied' | 'invalid_interval' | 'details_changed' | 'unavailable',
+) {
+  if (reason === 'unavailable') {
+    // Honour the rejection even if publication changes before a subsequent read.
+    unavailable.value = true
+    calendar.value = undefined
+  } else if (reason === 'occupied' || reason === 'invalid_interval') {
+    notice.value = 'This time is no longer available. Please choose another time.'
+    // A rejected interval is never replaced by a neighbouring one.
+    await router.replace(calendarLocation({ date: date.value }))
+  } else {
+    notice.value =
+      'Meeting details changed. Please review the current details before confirming again.'
+    // Refresh the summary and interval together. Rendering a new Confirm booking
+    // action is not consent: only the guest's next explicit submit may book.
+    await load()
+  }
 }
 watch(() => route.fullPath, load, { immediate: true })
 onBeforeUnmount(() => {
@@ -203,6 +225,7 @@ onBeforeUnmount(() => {
           v-if="isForm && selectedInterval"
           :calendar="calendar"
           :interval="selectedInterval"
+          @recover="recover"
         />
         <template v-else>
           <section class="month-calendar" aria-label="Choose a date">

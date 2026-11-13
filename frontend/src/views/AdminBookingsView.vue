@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { listAdminBookings, type Booking } from '../generated/sdk'
 import { requireAdminLogin } from '../admin/session'
+import DeleteBooking from '../components/DeleteBooking.vue'
 
 const router = useRouter()
 const period = ref<'upcoming' | 'past'>('upcoming')
@@ -37,6 +38,10 @@ async function load() {
     bookings.value = result.data.bookings
     total.value = result.data.total
     pageSize.value = result.data.pageSize
+    if (page.value > pages.value) {
+      page.value = pages.value
+      return await load()
+    }
   } catch {
     error.value = 'Unable to load bookings. Please try again.'
   } finally {
@@ -93,6 +98,7 @@ onMounted(load)
             <th scope="col">Date and time</th>
             <th scope="col">Guest</th>
             <th scope="col">Notes</th>
+            <th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -120,6 +126,9 @@ onMounted(load)
                 <p class="notes plain-text">{{ booking.notes }}</p>
               </details>
               <p v-else class="notes plain-text">{{ booking.notes || 'No notes.' }}</p>
+            </td>
+            <td data-label="Actions">
+              <DeleteBooking :booking="booking" @deleted="load" />
             </td>
           </tr>
         </tbody>

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ConfirmBookingData, ConfirmBookingErrors, ConfirmBookingResponses, CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminHomeData, GetAdminHomeErrors, GetAdminHomeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminBookingsData, ListAdminBookingsErrors, ListAdminBookingsResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses, SetAdminMeetingTypePublicationData, SetAdminMeetingTypePublicationErrors, SetAdminMeetingTypePublicationResponses, UpdateAdminMeetingTypeData, UpdateAdminMeetingTypeErrors, UpdateAdminMeetingTypeResponses } from './types.gen';
+import type { ConfirmBookingData, ConfirmBookingErrors, ConfirmBookingResponses, CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, DeleteAdminBookingData, DeleteAdminBookingErrors, DeleteAdminBookingResponses, GetAdminHomeData, GetAdminHomeErrors, GetAdminHomeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminBookingsData, ListAdminBookingsErrors, ListAdminBookingsResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses, SetAdminMeetingTypePublicationData, SetAdminMeetingTypePublicationErrors, SetAdminMeetingTypePublicationResponses, UpdateAdminMeetingTypeData, UpdateAdminMeetingTypeErrors, UpdateAdminMeetingTypeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -30,6 +30,21 @@ export const listAdminBookings = <ThrowOnError extends boolean = false>(options?
             type: 'apiKey'
         }],
     url: '/admin/bookings',
+    ...options
+});
+
+/**
+ * Permanently delete a booking
+ *
+ * Requires explicit administrator confirmation and same-origin protection. Atomically removes the booking and its shared occupancy; failures change neither. No trash, restoration or cancellation status. Freed time remains subject to schedule, current time, window and other occupancy.
+ */
+export const deleteAdminBooking = <ThrowOnError extends boolean = false>(options: Options<DeleteAdminBookingData, ThrowOnError>): RequestResult<DeleteAdminBookingResponses, DeleteAdminBookingErrors, ThrowOnError> => (options.client ?? client).delete<DeleteAdminBookingResponses, DeleteAdminBookingErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/bookings/{id}',
     ...options
 });
 
@@ -203,7 +218,7 @@ export const getAvailability = <ThrowOnError extends boolean = false>(options: O
 /**
  * Explicitly confirm a meeting
  *
- * Atomically rechecks current publication, reviewed details, schedule and shared occupancy. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. No public read endpoint or guest-information lookup. All responses are no-store.
+ * Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. Permanently deleted attempts return attempt_deleted without personal data or recreation. No public read endpoint or guest-information lookup. All responses are no-store.
  */
 export const confirmBooking = <ThrowOnError extends boolean = false>(options: Options<ConfirmBookingData, ThrowOnError>): RequestResult<ConfirmBookingResponses, ConfirmBookingErrors, ThrowOnError> => (options.client ?? client).post<ConfirmBookingResponses, ConfirmBookingErrors, ThrowOnError>({
     url: '/meeting-types/{slug}/bookings',

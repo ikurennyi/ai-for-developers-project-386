@@ -6,6 +6,9 @@ import { confirmGuestBooking } from '../guest/retry'
 import { type Availability, type CalendarInterval, type GuestErrors } from '../generated/sdk'
 
 const props = defineProps<{ calendar: Availability; interval: CalendarInterval }>()
+const emit = defineEmits<{
+  recover: [reason: 'occupied' | 'invalid_interval' | 'details_changed' | 'unavailable']
+}>()
 const router = useRouter()
 const draft = guestDraft(props.calendar.meetingType.slug)
 const guestName = ref(draft.guestName)
@@ -42,6 +45,20 @@ function fieldErrors(value: unknown): GuestErrors {
 function length(value: string) {
   return Array.from(value).length
 }
+function handleRejection(error: { message: string; code?: string; errors?: unknown }) {
+  if (error.message === 'Meeting type unavailable') {
+    emit('recover', 'unavailable')
+  } else if (
+    error.code === 'occupied' ||
+    error.code === 'invalid_interval' ||
+    error.code === 'details_changed'
+  ) {
+    emit('recover', error.code)
+  } else {
+    message.value = error.message
+    errors.value = fieldErrors(error.errors)
+  }
+}
 async function confirm() {
   if (pending.value) return
   errors.value = {}
@@ -75,8 +92,7 @@ async function confirm() {
       await router.replace({ name: 'booking-confirmation', params: { token } })
     } else if (error) {
       uncertain.value = false
-      message.value = error.message
-      if ('errors' in error) errors.value = fieldErrors(error.errors)
+      handleRejection(error)
     } else {
       throw new Error('Unconfirmed result')
     }

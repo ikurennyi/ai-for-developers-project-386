@@ -457,6 +457,26 @@ op listAdminBookings(
   @body body: AuthError;
 };
 
+@delete
+@route("/admin/bookings/{id}")
+@tag("Administrator bookings")
+@useAuth(AdminCookie)
+@operationId("deleteAdminBooking")
+@summary("Permanently delete a booking")
+@doc("Requires explicit administrator confirmation and same-origin protection. Atomically removes the booking and its shared occupancy; failures change neither. No trash, restoration or cancellation status. Freed time remains subject to schedule, current time, window and other occupancy.")
+op deleteAdminBooking(
+  @doc("Saved booking identifier.") @path id: string,
+  @doc("Required mutation protection header.") @header("X-Calendar-Request") calendarRequest: "1"
+): {
+  @statusCode statusCode: 204;
+} | Unauthenticated | Forbidden | {
+  @statusCode statusCode: 404;
+  @body body: AuthError;
+} | {
+  @statusCode statusCode: 503;
+  @body body: AuthError;
+};
+
 @doc("English field validation messages; absent keys have no error.")
 @example(#{ guestName: "Enter your name (1–100 characters)." })
 model GuestErrors {
@@ -465,7 +485,7 @@ model GuestErrors {
   @doc("Notes error.") notes?: string;
 }
 
-@doc("A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.")
+@doc("A rejected confirmation. occupied and invalid_interval require refreshed availability and a cleared time, retaining the date and guest draft without substitution. details_changed requires current name, description and duration to be displayed and a fresh explicit confirmation; never automatically resubmit.")
 @example(#{ code: "occupied", message: "This time is no longer available. Please choose another time." })
 model BookingError {
   @doc("Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay.") code: "validation" | "details_changed" | "invalid_interval" | "occupied" | "attempt_deleted";
@@ -478,7 +498,7 @@ model BookingError {
 @tag("Bookings")
 @operationId("confirmBooking")
 @summary("Explicitly confirm a meeting")
-@doc("Atomically rechecks current publication, reviewed details, schedule and shared occupancy. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. No public read endpoint or guest-information lookup. All responses are no-store.")
+@doc("Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. Permanently deleted attempts return attempt_deleted without personal data or recreation. No public read endpoint or guest-information lookup. All responses are no-store.")
 op confirmBooking(
   @doc("Current published address.") @path slug: string,
   @doc("Reviewed meeting, selected instant and guest details.") @body confirmation: BookingConfirmation,

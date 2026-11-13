@@ -204,6 +204,10 @@ class Smoke
     offers_url = URI("http://127.0.0.1:#{backend_port}/api/v1/meeting-types")
     persisted_offers = Net::HTTP.get(offers_url)
     stop(rails_pid)
+    # Independent browser scenarios share one loopback IP. Give the restart
+    # pass its own login budget; exact throttling is tested through HTTP.
+    puts command("reset-browser-login-budget", "bundle", "exec", "rails", "runner",
+      "AdminLoginLimit.delete_all", directory: backend)
     start("rails-restarted", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
       "-P", File.join(@directory, "rails-restarted.pid"), "--log-to-stdout", directory: backend)
     ready("restarted Rails") { http_ready(backend_port, "/up") }
