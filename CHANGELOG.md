@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/ikurennyi/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-13)
+
+
+### Features
+
+* db:seed ([9b66167](https://github.com/ikurennyi/ai-for-developers-project-386/commit/9b661673fcf5d1225d45be2e008334639075e4ff))
+* glossary.md added ([e62559b](https://github.com/ikurennyi/ai-for-developers-project-386/commit/e62559b5c4120b9654e7455594ec11a5470e1324))
+
 ## 0.1.0 (2026-11-13)
 
 
