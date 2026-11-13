@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getAvailability, type Availability } from '../generated/sdk'
+import GuestBookingForm from './GuestBookingForm.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -189,13 +190,11 @@ onBeforeUnmount(() => {
             }}
           </p>
         </section>
-        <section v-if="isForm && selectedInterval" aria-labelledby="guest-heading">
-          <h2 id="guest-heading">Guest details</h2>
-          <p>Your selection is not reserved. Booking confirmation is not available yet.</p>
-          <RouterLink class="back-calendar" :to="calendarLocation({ date, start })">
-            ← Back to calendar
-          </RouterLink>
-        </section>
+        <GuestBookingForm
+          v-if="isForm && selectedInterval"
+          :calendar="calendar"
+          :interval="selectedInterval"
+        />
         <template v-else>
           <section class="month-calendar" aria-label="Choose a date">
             <div class="month-navigation">

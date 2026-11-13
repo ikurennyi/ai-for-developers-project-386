@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses, SetAdminMeetingTypePublicationData, SetAdminMeetingTypePublicationErrors, SetAdminMeetingTypePublicationResponses, UpdateAdminMeetingTypeData, UpdateAdminMeetingTypeErrors, UpdateAdminMeetingTypeResponses } from './types.gen';
+import type { ConfirmBookingData, ConfirmBookingErrors, ConfirmBookingResponses, CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses, SetAdminMeetingTypePublicationData, SetAdminMeetingTypePublicationErrors, SetAdminMeetingTypePublicationResponses, UpdateAdminMeetingTypeData, UpdateAdminMeetingTypeErrors, UpdateAdminMeetingTypeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -169,3 +169,17 @@ export const listMeetingTypes = <ThrowOnError extends boolean = false>(options?:
  * Return fourteen Berlin dates with advisory shared availability. Reading never creates a booking or reserves an interval.
  */
 export const getAvailability = <ThrowOnError extends boolean = false>(options: Options<GetAvailabilityData, ThrowOnError>): RequestResult<GetAvailabilityResponses, GetAvailabilityErrors, ThrowOnError> => (options.client ?? client).get<GetAvailabilityResponses, GetAvailabilityErrors, ThrowOnError>({ url: '/meeting-types/{slug}/availability', ...options });
+
+/**
+ * Explicitly confirm a meeting
+ *
+ * Atomically rechecks current publication, reviewed details, schedule and shared occupancy. Returns a private creation response with no public read endpoint. All responses are no-store.
+ */
+export const confirmBooking = <ThrowOnError extends boolean = false>(options: Options<ConfirmBookingData, ThrowOnError>): RequestResult<ConfirmBookingResponses, ConfirmBookingErrors, ThrowOnError> => (options.client ?? client).post<ConfirmBookingResponses, ConfirmBookingErrors, ThrowOnError>({
+    url: '/meeting-types/{slug}/bookings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

@@ -1,4 +1,4 @@
-import { getAvailability, getHealth, loginAdmin, getAdminSession, logoutAdmin, listMeetingTypes, listAdminMeetingTypes, createAdminMeetingType, getAdminMeetingType, updateAdminMeetingType, setAdminMeetingTypePublication, type Availability, type Health, type MeetingType } from './sdk';
+import { confirmBooking, getAvailability, getHealth, loginAdmin, getAdminSession, logoutAdmin, listMeetingTypes, listAdminMeetingTypes, createAdminMeetingType, getAdminMeetingType, updateAdminMeetingType, setAdminMeetingTypePublication, type Availability, type Booking, type Health, type MeetingType } from './sdk';
 
 // Consumer-level checks: generated types preserve the literal health response.
 const healthy: Health = { status: 'ok' };
@@ -75,3 +75,19 @@ async function readCalendar(): Promise<Availability> {
   return response.data;
 }
 void readCalendar;
+
+async function confirmMeeting(): Promise<Booking> {
+  const response = await confirmBooking({
+    path: { slug: 'discussion' },
+    body: {
+      startsAt: '2026-11-13T09:00:00Z',
+      meetingType: { name: 'Discussion', description: '', durationMinutes: 20 },
+      guestName: 'Guest', guestEmail: 'guest@example.com', notes: '',
+    },
+    throwOnError: true,
+  });
+  const zone: 'Europe/Berlin' = response.data.timeZone;
+  void zone;
+  return response.data;
+}
+void confirmMeeting;

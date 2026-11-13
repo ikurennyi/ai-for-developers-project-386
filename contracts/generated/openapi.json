@@ -13,6 +13,9 @@
       "name": "Meeting types"
     },
     {
+      "name": "Bookings"
+    },
+    {
       "name": "Administrator authentication"
     },
     {
@@ -729,6 +732,80 @@
           "Meeting types"
         ]
       }
+    },
+    "/meeting-types/{slug}/bookings": {
+      "post": {
+        "operationId": "confirmBooking",
+        "summary": "Explicitly confirm a meeting",
+        "description": "Atomically rechecks current publication, reviewed details, schedule and shared occupancy. Returns a private creation response with no public read endpoint. All responses are no-store.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Current published address.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingTypeUnavailable"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Client error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Bookings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingConfirmation"
+              }
+            }
+          },
+          "description": "Reviewed meeting, selected instant and guest details."
+        }
+      }
     }
   },
   "components": {
@@ -966,6 +1043,181 @@
           ]
         }
       },
+      "Booking": {
+        "type": "object",
+        "required": [
+          "id",
+          "meetingName",
+          "meetingDescription",
+          "durationMinutes",
+          "hostName",
+          "timeZone",
+          "startsAt",
+          "endsAt",
+          "guestName",
+          "guestEmail",
+          "notes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System identifier, not a public access credential."
+          },
+          "meetingName": {
+            "type": "string",
+            "description": "Saved meeting name."
+          },
+          "meetingDescription": {
+            "type": "string",
+            "description": "Saved description."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Saved duration."
+          },
+          "hostName": {
+            "type": "string",
+            "description": "Fixed calendar owner."
+          },
+          "timeZone": {
+            "type": "string",
+            "enum": [
+              "Europe/Berlin"
+            ],
+            "description": "Fixed display zone."
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact saved start."
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact saved end."
+          },
+          "guestName": {
+            "type": "string",
+            "description": "Trimmed name."
+          },
+          "guestEmail": {
+            "type": "string",
+            "description": "Guest email."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Plain-text notes."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A persisted confirmation returned only to its creating request; there is no public booking lookup.",
+        "example": {
+          "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+          "meetingName": "Discussion",
+          "meetingDescription": "",
+          "durationMinutes": 20,
+          "hostName": "Alex Morgan",
+          "timeZone": "Europe/Berlin",
+          "startsAt": "2026-11-13T09:00:00Z",
+          "endsAt": "2026-11-13T09:20:00Z",
+          "guestName": "Guest",
+          "guestEmail": "guest@example.com",
+          "notes": ""
+        }
+      },
+      "BookingConfirmation": {
+        "type": "object",
+        "required": [
+          "startsAt",
+          "meetingType",
+          "guestName",
+          "guestEmail"
+        ],
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact selected start instant."
+          },
+          "meetingType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewedMeeting"
+              }
+            ],
+            "description": "Details the guest reviewed."
+          },
+          "guestName": {
+            "type": "string",
+            "description": "Guest name, trimmed to 1–100 characters."
+          },
+          "guestEmail": {
+            "type": "string",
+            "description": "Required email, at most 254 characters."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional plain-text notes, at most 2000 characters."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "An explicit confirmation; reading availability never creates this record.",
+        "example": {
+          "startsAt": "2026-11-13T09:00:00Z",
+          "meetingType": {
+            "name": "Discussion",
+            "description": "",
+            "durationMinutes": 20
+          },
+          "guestName": "Guest",
+          "guestEmail": "guest@example.com",
+          "notes": ""
+        }
+      },
+      "BookingError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "validation",
+              "details_changed",
+              "invalid_interval",
+              "occupied"
+            ],
+            "description": "Machine-readable reason."
+          },
+          "message": {
+            "type": "string",
+            "description": "English explanation."
+          },
+          "errors": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GuestErrors"
+              }
+            ],
+            "description": "Field errors for invalid guest data."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.",
+        "example": {
+          "code": "occupied",
+          "message": "This time is no longer available. Please choose another time."
+        }
+      },
       "CalendarDay": {
         "type": "object",
         "required": [
@@ -1059,6 +1311,30 @@
         "example": {
           "username": "owner",
           "password": "example-not-a-default-password"
+        }
+      },
+      "GuestErrors": {
+        "type": "object",
+        "properties": {
+          "guestName": {
+            "type": "string",
+            "description": "Name error."
+          },
+          "guestEmail": {
+            "type": "string",
+            "description": "Email error."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes error."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "English field validation messages; absent keys have no error.",
+        "example": {
+          "guestName": "Enter your name (1–100 characters)."
         }
       },
       "Health": {
@@ -1284,6 +1560,38 @@
           "description": "",
           "durationMinutes": 20,
           "slug": "planning"
+        }
+      },
+      "ReviewedMeeting": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "durationMinutes"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Reviewed meeting name."
+          },
+          "description": {
+            "type": "string",
+            "description": "Reviewed description."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Reviewed duration in minutes."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Meeting details explicitly reviewed by the guest, checked again at confirmation.",
+        "example": {
+          "name": "Discussion",
+          "description": "",
+          "durationMinutes": 20
         }
       }
     },

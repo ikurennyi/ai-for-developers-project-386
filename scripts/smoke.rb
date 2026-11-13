@@ -199,7 +199,7 @@ class Smoke
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
         "SMOKE_RUNTIME_DIR" => @directory })
     puts command("occupy-calendar", "bundle", "exec", "rails", "runner",
-      "Occupancy.create!(starts_at: Time.current - 1.day, ends_at: Time.current + 15.days)", directory: backend)
+      "Booking.transaction { Booking.delete_all; Occupancy.delete_all; Occupancy.create!(starts_at: Time.current - 1.day, ends_at: Time.current + 15.days) }", directory: backend)
     puts command("chromium-occupied", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
