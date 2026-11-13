@@ -21,11 +21,22 @@ export async function hasAdminSession(): Promise<boolean> {
   return true
 }
 
-// Future administrative forms can preserve drafts in sessionStorage before
-// calling this on 401; requests are never queued or replayed after login.
+let recoveringSession = false
+export function isAdminSessionRecovery() {
+  return recoveringSession
+}
+
+// Only authentication recovery bypasses the unsaved-form departure warning.
+// No request or mutation intent is retained.
 export async function requireAdminLogin(router: Router): Promise<void> {
+  if (recoveringSession) return
   const returnTo = adminReturnTarget(router.currentRoute.value.fullPath)
-  await router.replace({ name: 'admin-login', query: { returnTo } })
+  recoveringSession = true
+  try {
+    await router.replace({ name: 'admin-login', query: { returnTo } })
+  } finally {
+    recoveringSession = false
+  }
 }
 
 export async function logOut(router: Router): Promise<void> {
