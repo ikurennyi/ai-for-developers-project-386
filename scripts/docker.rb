@@ -30,12 +30,19 @@ if command == "setup"
 end
 
 abort "Run HTTPS_PORT=<free port> ruby scripts/docker.rb setup first" unless File.file?(config)
+abort "Private Docker configuration must not be group/world accessible" unless (File.stat(config).mode & 0o077).zero?
+File.readlines(config, chomp: true).each do |line|
+  key, value = line.split("=", 2)
+  abort "Invalid private Docker configuration" unless %w[HTTPS_PORT POSTGRES_PASSWORD SECRET_KEY_BASE ADMIN_USERNAME ADMIN_PASSWORD].include?(key) && value && !value.empty?
+  ENV[key] = value
+end
 ENV["CALENDAR_CHECKOUT"] = root
 
 # Refuse to reuse any project resource owned by another checkout. Never prune,
 # remove volumes, or touch the development Compose project.
 { "container" => "ps", "volume" => "ls", "network" => "ls" }.each do |type, list|
-  output, status = Open3.capture2("docker", type, list, "-q", "--filter", "label=com.docker.compose.project=#{project}")
+  listing = type == "container" ? [ list, "-a", "-q" ] : [ list, "-q" ]
+  output, status = Open3.capture2("docker", type, *listing, "--filter", "label=com.docker.compose.project=#{project}")
   abort "Cannot inspect Docker #{type} ownership" unless status.success?
   output.split.each do |id|
     raw, inspected = Open3.capture2("docker", type, "inspect", id)
@@ -49,12 +56,16 @@ end
 args = case command
 when "build" then [ "build", "--pull" ]
 when "up" then [ "up", "-d", "--wait", "--wait-timeout", "180" ]
+when "restart"
+  base = [ "docker", "compose", "--project-name", project, "--env-file", config, "-f", File.join(root, "compose.application.yml") ]
+  system(*base, "restart", "app", exception: true)
+  [ "up", "-d", "--wait", "--wait-timeout", "180" ]
 when "recreate" then [ "up", "-d", "--force-recreate", "--no-deps", "--wait", "--wait-timeout", "180", "app" ]
 when "stop" then [ "stop" ]
 when "status" then [ "ps" ]
 when "logs" then [ "logs", "--tail", "100" ]
 when "exec" then [ "exec", "-T", *ARGV ]
-else abort "Usage: ruby scripts/docker.rb setup|build|up|recreate|stop|status|logs|exec ..."
+else abort "Usage: ruby scripts/docker.rb setup|build|up|restart|recreate|stop|status|logs|exec ..."
 end
 exec("docker", "compose", "--project-name", project, "--env-file", config,
      "-f", File.join(root, "compose.application.yml"), *args)

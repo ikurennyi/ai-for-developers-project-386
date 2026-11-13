@@ -56,6 +56,7 @@ No email, video or external-calendar credentials or services are required.
 
 ```sh
 mise exec -- ruby scripts/docker.rb recreate
+mise exec -- ruby scripts/docker.rb restart
 mise exec -- ruby scripts/docker.rb stop
 mise exec -- ruby scripts/docker.rb up
 ```
@@ -107,6 +108,9 @@ product), then run against this dedicated stack:
 
 ```sh
 mise exec -- node test/docker_acceptance.mjs
+# Export only committed HEAD into a fresh private directory; build without
+# host dependencies/config, run the same acceptance, stop and retain its data:
+HTTPS_PORT=8444 mise exec -- ruby test/docker_clean_checkout_test.rb
 mise run check
 ```
 
