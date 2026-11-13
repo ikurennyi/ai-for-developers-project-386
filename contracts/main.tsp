@@ -387,7 +387,7 @@ model BookingConfirmation {
   @doc("Optional plain-text notes, at most 2000 characters.") notes?: string;
 }
 
-@doc("A persisted confirmation returned only to its creating request; there is no public booking lookup.")
+@doc("A persisted snapshot returned to its creating request or the authenticated administrator; there is no public booking lookup.")
 @example(#{ id: "29a71c26-c842-407d-bcd2-e93c8ea0ceab", meetingName: "Discussion", meetingDescription: "", durationMinutes: 20, hostName: "Alex Morgan", timeZone: "Europe/Berlin", startsAt: utcDateTime.fromISO("2026-11-13T09:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-13T09:20:00Z"), guestName: "Guest", guestEmail: "guest@example.com", notes: "" })
 model Booking {
   @doc("System identifier, not a public access credential.") id: string;
@@ -427,6 +427,32 @@ model AdminHome {
 @summary("Read all unfinished bookings grouped by Berlin day")
 @doc("Requires administrator access. Includes ongoing bookings and every future booking, including hidden types and dates beyond the creation window. End equal to server now is excluded. Returns saved snapshots and full plain-text guest details. Responses are no-store.")
 op getAdminHome(): AdminHome | Unauthenticated;
+
+@doc("One page of retained administrator booking snapshots.")
+@example(#{ bookings: #[], page: 1, pageSize: 20, total: 0 })
+model AdminBookingPage {
+  @doc("Saved meeting and guest details in the requested order.")
+  @example(#[#{ id: "29a71c26-c842-407d-bcd2-e93c8ea0ceab", meetingName: "Discussion", meetingDescription: "", durationMinutes: 20, hostName: "Alex Morgan", timeZone: "Europe/Berlin", startsAt: utcDateTime.fromISO("2026-11-13T09:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-13T09:20:00Z"), guestName: "Guest", guestEmail: "guest@example.com", notes: "" }])
+  bookings: Booking[];
+  @doc("Requested one-based page.") @example(1) @minValue(1) page: int32;
+  @doc("Fixed maximum records per page.") @example(20) pageSize: 20;
+  @doc("Total matching records, not limited by the creation window.") @example(0) @minValue(0) total: int32;
+}
+
+@get
+@route("/admin/bookings")
+@tag("Administrator bookings")
+@useAuth(AdminCookie)
+@operationId("listAdminBookings")
+@summary("Read upcoming bookings or retained history")
+@doc("Private, non-cacheable snapshots. Upcoming includes ongoing meetings (end > server now), ordered by start ascending; Past uses end <= now and start descending. Equal starts use identifier order. No creation-window limit. Pages contain at most 20 bookings.")
+op listAdminBookings(
+  @doc("Defaults to Upcoming.") @query period?: "upcoming" | "past",
+  @doc("One-based page; defaults to 1. Beyond the last page returns an empty array.") @query @minValue(1) page?: int32
+): AdminBookingPage | Unauthenticated | {
+  @statusCode statusCode: 400;
+  @body body: AuthError;
+};
 
 @doc("English field validation messages; absent keys have no error.")
 @example(#{ guestName: "Enter your name (1–100 characters)." })

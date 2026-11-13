@@ -2,9 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import AdminLayout from '../views/AdminLayout.vue'
 import AdminLoginView from '../views/AdminLoginView.vue'
-import AdminPageView from '../views/AdminPageView.vue'
 import AdminLinksView from '../views/AdminLinksView.vue'
 import AdminHomeView from '../views/AdminHomeView.vue'
+import AdminBookingsView from '../views/AdminBookingsView.vue'
 import NewMeetingTypeView from '../views/NewMeetingTypeView.vue'
 import { hasAdminSession } from '../admin/session'
 import MeetingTypesView from '../views/MeetingTypesView.vue'
@@ -37,8 +37,7 @@ const router = createRouter({
         {
           path: 'bookings',
           name: 'admin-bookings',
-          component: AdminPageView,
-          props: { title: 'Bookings' },
+          component: AdminBookingsView,
         },
       ],
     },

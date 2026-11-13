@@ -16,6 +16,9 @@
       "name": "Administrator Home"
     },
     {
+      "name": "Administrator bookings"
+    },
+    {
       "name": "Bookings"
     },
     {
@@ -26,6 +29,81 @@
     }
   ],
   "paths": {
+    "/admin/bookings": {
+      "get": {
+        "operationId": "listAdminBookings",
+        "summary": "Read upcoming bookings or retained history",
+        "description": "Private, non-cacheable snapshots. Upcoming includes ongoing meetings (end > server now), ordered by start ascending; Past uses end <= now and start descending. Equal starts use identifier order. No creation-window limit. Pages contain at most 20 bookings.",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "description": "Defaults to Upcoming.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "upcoming",
+                "past"
+              ]
+            },
+            "explode": false
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; defaults to 1. Beyond the last page returns an empty array.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBookingPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator bookings"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/admin/home": {
       "get": {
         "operationId": "getAdminHome",
@@ -851,6 +929,71 @@
   },
   "components": {
     "schemas": {
+      "AdminBookingPage": {
+        "type": "object",
+        "required": [
+          "bookings",
+          "page",
+          "pageSize",
+          "total"
+        ],
+        "properties": {
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            },
+            "description": "Saved meeting and guest details in the requested order.",
+            "example": [
+              {
+                "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+                "meetingName": "Discussion",
+                "meetingDescription": "",
+                "durationMinutes": 20,
+                "hostName": "Alex Morgan",
+                "timeZone": "Europe/Berlin",
+                "startsAt": "2026-11-13T09:00:00Z",
+                "endsAt": "2026-11-13T09:20:00Z",
+                "guestName": "Guest",
+                "guestEmail": "guest@example.com",
+                "notes": ""
+              }
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Requested one-based page.",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "enum": [
+              20
+            ],
+            "description": "Fixed maximum records per page.",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "description": "Total matching records, not limited by the creation window.",
+            "example": 0
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "One page of retained administrator booking snapshots.",
+        "example": {
+          "bookings": [],
+          "page": 1,
+          "pageSize": 20,
+          "total": 0
+        }
+      },
       "AdminHome": {
         "type": "object",
         "required": [
@@ -1218,7 +1361,7 @@
         "additionalProperties": {
           "not": {}
         },
-        "description": "A persisted confirmation returned only to its creating request; there is no public booking lookup.",
+        "description": "A persisted snapshot returned to its creating request or the authenticated administrator; there is no public booking lookup.",
         "example": {
           "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
           "meetingName": "Discussion",

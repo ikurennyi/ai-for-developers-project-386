@@ -3,6 +3,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       namespace :admin do
         resource :home, only: :show, controller: :home
+        resources :bookings, only: [ :index ]
         resources :meeting_types, path: "meeting-types", only: [ :index, :create, :show, :update ] do
           put :publication, on: :member
         end

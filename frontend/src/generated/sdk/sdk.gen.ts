@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ConfirmBookingData, ConfirmBookingErrors, ConfirmBookingResponses, CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminHomeData, GetAdminHomeErrors, GetAdminHomeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses, SetAdminMeetingTypePublicationData, SetAdminMeetingTypePublicationErrors, SetAdminMeetingTypePublicationResponses, UpdateAdminMeetingTypeData, UpdateAdminMeetingTypeErrors, UpdateAdminMeetingTypeResponses } from './types.gen';
+import type { ConfirmBookingData, ConfirmBookingErrors, ConfirmBookingResponses, CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminHomeData, GetAdminHomeErrors, GetAdminHomeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminBookingsData, ListAdminBookingsErrors, ListAdminBookingsResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses, SetAdminMeetingTypePublicationData, SetAdminMeetingTypePublicationErrors, SetAdminMeetingTypePublicationResponses, UpdateAdminMeetingTypeData, UpdateAdminMeetingTypeErrors, UpdateAdminMeetingTypeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,21 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Read upcoming bookings or retained history
+ *
+ * Private, non-cacheable snapshots. Upcoming includes ongoing meetings (end > server now), ordered by start ascending; Past uses end <= now and start descending. Equal starts use identifier order. No creation-window limit. Pages contain at most 20 bookings.
+ */
+export const listAdminBookings = <ThrowOnError extends boolean = false>(options?: Options<ListAdminBookingsData, ThrowOnError>): RequestResult<ListAdminBookingsResponses, ListAdminBookingsErrors, ThrowOnError> => (options?.client ?? client).get<ListAdminBookingsResponses, ListAdminBookingsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/bookings',
+    ...options
+});
 
 /**
  * Read all unfinished bookings grouped by Berlin day
