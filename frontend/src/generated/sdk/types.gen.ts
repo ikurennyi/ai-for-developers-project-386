@@ -186,7 +186,7 @@ export type BookingConfirmation = {
 };
 
 /**
- * A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.
+ * A rejected confirmation. occupied and invalid_interval require refreshed availability and a cleared time, retaining the date and guest draft without substitution. details_changed requires current name, description and duration to be displayed and a fresh explicit confirmation; never automatically resubmit.
  */
 export type BookingError = {
     /**

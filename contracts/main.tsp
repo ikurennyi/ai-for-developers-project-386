@@ -411,7 +411,7 @@ model GuestErrors {
   @doc("Notes error.") notes?: string;
 }
 
-@doc("A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.")
+@doc("A rejected confirmation. occupied and invalid_interval require refreshed availability and a cleared time, retaining the date and guest draft without substitution. details_changed requires current name, description and duration to be displayed and a fresh explicit confirmation; never automatically resubmit.")
 @example(#{ code: "occupied", message: "This time is no longer available. Please choose another time." })
 model BookingError {
   @doc("Machine-readable reason.") code: "validation" | "details_changed" | "invalid_interval" | "occupied";
@@ -424,7 +424,7 @@ model BookingError {
 @tag("Bookings")
 @operationId("confirmBooking")
 @summary("Explicitly confirm a meeting")
-@doc("Atomically rechecks current publication, reviewed details, schedule and shared occupancy. Returns a private creation response with no public read endpoint. All responses are no-store.")
+@doc("Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. Returns a private creation response with no public read endpoint. All responses are no-store.")
 op confirmBooking(
   @doc("Current published address.") @path slug: string,
   @doc("Reviewed meeting, selected instant and guest details.") @body confirmation: BookingConfirmation,
