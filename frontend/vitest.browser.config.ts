@@ -9,6 +9,9 @@ export default mergeConfig(
       ? `${process.env.SMOKE_RUNTIME_DIR}/vite-cache`
       : undefined,
     test: {
+      provide: {
+        emptyMeetingTypes: process.env.SMOKE_EMPTY_MEETING_TYPES === '1',
+      },
       attachmentsDir: process.env.SMOKE_RUNTIME_DIR
         ? `${process.env.SMOKE_RUNTIME_DIR}/attachments`
         : undefined,

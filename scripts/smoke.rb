@@ -145,6 +145,7 @@ class Smoke
 
   def run_tests
     backend = File.join(ROOT, "backend")
+    puts command("database-migrate", "bundle", "exec", "rails", "db:migrate", directory: backend)
     probe = 'connection = ActiveRecord::Base.connection; raise "wrong database" unless connection.select_value("SELECT current_database()") == ENV.fetch("SMOKE_DATABASE"); raise "unexpected PostgreSQL version" unless connection.select_value("SHOW server_version").start_with?("18.3"); raise "connection failed" unless connection.select_value("SELECT 1") == 1; puts "PostgreSQL connection verified"'
     puts command("database-probe", "bundle", "exec", "rails", "runner", probe,
       directory: backend, env: { "SMOKE_DATABASE" => @database })
@@ -153,6 +154,9 @@ class Smoke
         env: { "DATABASE_URL" => nil })
       return
     end
+    puts command("database-seed", "bundle", "exec", "rails", "db:seed", directory: backend)
+    fixtures = 'MeetingType.create!(name: "Extended discussion", description: "An additional published offer.", duration_minutes: 45, slug: "extended", published: true); MeetingType.create!(name: "Private offer", duration_minutes: 20, slug: "private")'
+    puts command("meeting-type-fixtures", "bundle", "exec", "rails", "runner", fixtures, directory: backend)
     backend_port = free_port
     rails_pid = start("rails", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
       "-P", File.join(@directory, "rails.pid"), "--log-to-stdout", directory: backend)
@@ -166,6 +170,24 @@ class Smoke
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
         "SMOKE_RUNTIME_DIR" => @directory })
+    # A fresh application process must read the same persisted offers.
+    offers_url = URI("http://127.0.0.1:#{backend_port}/api/v1/meeting-types")
+    persisted_offers = Net::HTTP.get(offers_url)
+    stop(rails_pid)
+    start("rails-restarted", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
+      "-P", File.join(@directory, "rails-restarted.pid"), "--log-to-stdout", directory: backend)
+    ready("restarted Rails") { http_ready(backend_port, "/up") }
+    raise "meeting types changed across application restart" unless Net::HTTP.get(offers_url) == persisted_offers
+    puts command("chromium-restarted", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
+      timeout: 120, directory: File.join(ROOT, "frontend"),
+      env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
+        "SMOKE_RUNTIME_DIR" => @directory })
+    puts command("hide-meeting-types", "bundle", "exec", "rails", "runner",
+      "MeetingType.update_all(published: false)", directory: backend)
+    puts command("chromium-empty", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
+      timeout: 120, directory: File.join(ROOT, "frontend"),
+      env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
+        "SMOKE_RUNTIME_DIR" => @directory, "SMOKE_EMPTY_MEETING_TYPES" => "1" })
   end
 
   def cleanup
