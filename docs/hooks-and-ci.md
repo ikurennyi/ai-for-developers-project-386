@@ -47,9 +47,11 @@ extra Docker containers in CI. Local mode retains isolated per-gate containers.
 `mise run ci:database-test` simulates this service locally, including concurrent
 gates, real failures and the unchanged aggregate command; it is not an Actions run.
 
-`ci:validate` runs pinned **actionlint 1.7.12** against only our workflow, then
-checks the workflow's security/environment policy. It does not validate, edit or
-regenerate the protected Hexlet workflow.
+`ci:validate` runs pinned **actionlint 1.7.12** against only our application and
+release workflows, then checks their security/environment/configuration policy.
+It does not validate, edit or regenerate the protected Hexlet workflow.
+The separate [release workflow](releases.md) requires provisioned credentials;
+local validation does not prove that release PR checks or external releases work.
 
 ## Commit ranges
 
