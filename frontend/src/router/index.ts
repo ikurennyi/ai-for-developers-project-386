@@ -25,6 +25,7 @@ const router = createRouter({
         { path: '', name: 'admin-home', component: AdminPageView, props: { title: 'Home' } },
         { path: 'links', name: 'admin-links', component: AdminLinksView },
         { path: 'links/new', name: 'admin-new-meeting-type', component: NewMeetingTypeView },
+        { path: 'links/:id/edit', name: 'admin-edit-meeting-type', component: NewMeetingTypeView },
         {
           path: 'bookings',
           name: 'admin-bookings',
