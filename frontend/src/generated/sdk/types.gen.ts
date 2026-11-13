@@ -247,9 +247,9 @@ export type BookingConfirmation = {
  */
 export type BookingError = {
     /**
-     * Machine-readable reason.
+     * Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay.
      */
-    code: 'validation' | 'details_changed' | 'invalid_interval' | 'occupied';
+    code: 'validation' | 'details_changed' | 'invalid_interval' | 'occupied' | 'attempt_deleted';
     /**
      * English explanation.
      */

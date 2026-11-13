@@ -468,7 +468,7 @@ model GuestErrors {
 @doc("A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.")
 @example(#{ code: "occupied", message: "This time is no longer available. Please choose another time." })
 model BookingError {
-  @doc("Machine-readable reason.") code: "validation" | "details_changed" | "invalid_interval" | "occupied";
+  @doc("Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay.") code: "validation" | "details_changed" | "invalid_interval" | "occupied" | "attempt_deleted";
   @doc("English explanation.") message: string;
   @doc("Field errors for invalid guest data.") errors?: GuestErrors;
 }

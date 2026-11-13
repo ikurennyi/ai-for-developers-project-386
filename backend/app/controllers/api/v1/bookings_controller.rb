@@ -16,8 +16,13 @@ module Api
         end
         Booking.transaction do
           attempt_digest = BookingRetry.lock(params[:attemptToken])
-          if attempt_digest && (original = Booking.find_by(attempt_digest: attempt_digest))
-            render json: original.confirmation, status: :created
+          if attempt_digest && (attempt = BookingAttempt.find_by(token_digest: attempt_digest))
+            if (original = attempt.booking)
+              render json: original.confirmation, status: :created
+            else
+              render json: { code: "attempt_deleted",
+                message: "This booking was removed. Please choose a meeting type to book again." }, status: :conflict
+            end
             return
           end
           # Shared row locks allow concurrent confirmations but serialize offer
@@ -55,7 +60,8 @@ module Api
           booking = Booking.create!(meeting_type: meeting_type, occupancy: occupancy,
             starts_at: starts_at, ends_at: ends_at, meeting_name: meeting_type.name,
             meeting_description: meeting_type.description, duration_minutes: meeting_type.duration_minutes,
-            guest_name: guest.name, guest_email: guest.email, notes: guest.notes, attempt_digest: attempt_digest)
+            guest_name: guest.name, guest_email: guest.email, notes: guest.notes)
+          BookingAttempt.create!(token_digest: attempt_digest, booking: booking) if attempt_digest
           # An exclusion/FK lock can wait after the initial schedule check.
           # Recheck at the end of the transaction, rolling back both records.
           if starts_at <= Time.current

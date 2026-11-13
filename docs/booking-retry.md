@@ -16,11 +16,14 @@ later booking gets a new capability.
 
 Rails hashes the capability with SHA-256. Inside the booking transaction, a
 PostgreSQL transaction advisory lock serializes matching capabilities even before
-the first insert. A unique digest index also protects persistent identity. A
+the first insert. A digest primary key also protects persistent identity. A
 committed retry returns the original booking before evaluating mutable publication,
 meeting details, time or occupancy, so it cannot conflict with itself. An
 uncommitted attempt still undergoes every normal booking check. Transaction rollback
-releases both the attempt identity and occupancy. Calls without the optional
+releases both the attempt identity and occupancy. Permanent removal of a booking
+nullifies its attempt association, retaining only the digest tombstone: replay
+returns `attempt_deleted` without personal data rather than recreating a deleted
+commitment. Calls without the optional
 capability retain the original one-shot API behavior; malformed capabilities are
 rejected rather than silently downgrading retry protection.
 

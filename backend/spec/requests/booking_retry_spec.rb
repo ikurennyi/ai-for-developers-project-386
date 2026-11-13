@@ -58,4 +58,20 @@ RSpec.describe "Private booking retry", type: :request do
     expect(Booking.count).to eq(0)
     expect(Occupancy.count).to eq(0)
   end
+
+  it "does not recreate a permanently removed booking when its uncertain attempt is retried" do
+    post "/api/v1/meeting-types/retry-discussion/bookings", params: payload, as: :json
+    booking = Booking.find(JSON.parse(response.body).fetch("id"))
+    # Fixture the permanent-removal outcome; replay is exercised through HTTP.
+    occupancy = booking.occupancy
+    booking.delete
+    occupancy.delete
+    post "/api/v1/meeting-types/retry-discussion/bookings", params: payload, as: :json
+    expect(response).to have_http_status(:conflict)
+    expect(JSON.parse(response.body)).to include("code" => "attempt_deleted")
+    expect(response.body).not_to include("private@example.com", "Private notes")
+    OpenapiContract.validate!(request, response)
+    expect(Booking.count).to eq(0)
+    expect(Occupancy.count).to eq(0)
+  end
 end
