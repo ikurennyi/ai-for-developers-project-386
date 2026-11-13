@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses } from './types.gen';
+import type { CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses, SetAdminMeetingTypePublicationData, SetAdminMeetingTypePublicationErrors, SetAdminMeetingTypePublicationResponses, UpdateAdminMeetingTypeData, UpdateAdminMeetingTypeErrors, UpdateAdminMeetingTypeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -45,6 +45,59 @@ export const createAdminMeetingType = <ThrowOnError extends boolean = false>(opt
             type: 'apiKey'
         }],
     url: '/admin/meeting-types',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read meeting type details for editing
+ *
+ * Requires administrator access; hidden offers are included. Responses are not cacheable.
+ */
+export const getAdminMeetingType = <ThrowOnError extends boolean = false>(options: Options<GetAdminMeetingTypeData, ThrowOnError>): RequestResult<GetAdminMeetingTypeResponses, GetAdminMeetingTypeErrors, ThrowOnError> => (options.client ?? client).get<GetAdminMeetingTypeResponses, GetAdminMeetingTypeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/meeting-types/{id}',
+    ...options
+});
+
+/**
+ * Save meeting type details without changing publication
+ *
+ * Uses creation validation. Identity is immutable. A changed address immediately releases the old address without redirecting it. Existing booking snapshots and occupancy are unchanged.
+ */
+export const updateAdminMeetingType = <ThrowOnError extends boolean = false>(options: Options<UpdateAdminMeetingTypeData, ThrowOnError>): RequestResult<UpdateAdminMeetingTypeResponses, UpdateAdminMeetingTypeErrors, ThrowOnError> => (options.client ?? client).put<UpdateAdminMeetingTypeResponses, UpdateAdminMeetingTypeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/meeting-types/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Publish, hide or republish a meeting type
+ *
+ * Explicit idempotent state change, separate from Save. Hiding prevents new bookings but preserves existing snapshots and occupancy. Only successful responses confirm the new state.
+ */
+export const setAdminMeetingTypePublication = <ThrowOnError extends boolean = false>(options: Options<SetAdminMeetingTypePublicationData, ThrowOnError>): RequestResult<SetAdminMeetingTypePublicationResponses, SetAdminMeetingTypePublicationErrors, ThrowOnError> => (options.client ?? client).put<SetAdminMeetingTypePublicationResponses, SetAdminMeetingTypePublicationErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/meeting-types/{id}/publication',
     ...options,
     headers: {
         'Content-Type': 'application/json',

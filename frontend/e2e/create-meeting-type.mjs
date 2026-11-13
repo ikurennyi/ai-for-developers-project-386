@@ -22,7 +22,12 @@ try {
   await page.getByRole('heading', { name: 'Links', exact: true }).waitFor()
   const offer = page.getByRole('listitem').filter({ hasText: 'Browser planning' })
   await offer.getByText('Hidden', { exact: true }).waitFor()
-  assert.equal(await offer.getByRole('link').getAttribute('href'), '/book/browser-planning')
+  assert.equal(
+    await offer
+      .getByRole('link', { name: '/book/browser-planning', exact: true })
+      .getAttribute('href'),
+    '/book/browser-planning',
+  )
   await page.reload()
   await page.getByRole('listitem').filter({ hasText: 'Browser planning' }).waitFor()
   const publicOffers = await context.request.get(`${origin}/api/v1/meeting-types`)
