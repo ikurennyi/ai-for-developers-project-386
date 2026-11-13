@@ -1,21 +1,33 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { guestDraft, saveGuestDraft, saveConfirmation } from '../guest/state'
 import {
   confirmBooking,
   type Availability,
-  type Booking,
   type CalendarInterval,
   type GuestErrors,
 } from '../generated/sdk'
 
 const props = defineProps<{ calendar: Availability; interval: CalendarInterval }>()
-const guestName = ref('')
-const guestEmail = ref('')
-const notes = ref('')
+const router = useRouter()
+const draft = guestDraft(props.calendar.meetingType.slug)
+const guestName = ref(draft.guestName)
+const guestEmail = ref(draft.guestEmail)
+const notes = ref(draft.notes)
+watch(
+  [guestName, guestEmail, notes],
+  () =>
+    saveGuestDraft(props.calendar.meetingType.slug, {
+      guestName: guestName.value,
+      guestEmail: guestEmail.value,
+      notes: notes.value,
+    }),
+  { flush: 'sync' },
+)
 const errors = ref<GuestErrors>({})
 const pending = ref(false)
 const message = ref('')
-const booking = ref<Booking>()
 
 function fieldError(value: unknown) {
   return typeof value === 'string' ? value : undefined
@@ -31,16 +43,8 @@ function fieldErrors(value: unknown): GuestErrors {
 function length(value: string) {
   return Array.from(value).length
 }
-function dateTime(value: string) {
-  return new Intl.DateTimeFormat('en-GB', {
-    dateStyle: 'full',
-    timeStyle: 'short',
-    timeZone: 'Europe/Berlin',
-    hourCycle: 'h23',
-  }).format(new Date(value))
-}
 async function confirm() {
-  if (pending.value || booking.value) return
+  if (pending.value) return
   errors.value = {}
   if (length(guestName.value.trim()) < 1 || length(guestName.value.trim()) > 100) {
     errors.value.guestName = 'Enter your name (1–100 characters).'
@@ -70,10 +74,11 @@ async function confirm() {
       },
     })
     if (data) {
-      booking.value = data
       guestName.value = ''
       guestEmail.value = ''
       notes.value = ''
+      const token = saveConfirmation(data)
+      await router.replace({ name: 'booking-confirmation', params: { token } })
     } else if (error) {
       message.value = error.message
       if ('errors' in error) errors.value = fieldErrors(error.errors)
@@ -89,20 +94,7 @@ async function confirm() {
 </script>
 
 <template>
-  <section v-if="booking" class="booking-success" aria-labelledby="success-heading">
-    <h2 id="success-heading">This meeting is scheduled</h2>
-    <p>{{ booking.meetingName }}</p>
-    <p class="plain-text">{{ booking.meetingDescription }}</p>
-    <p>Host: {{ booking.hostName }}</p>
-    <p>{{ dateTime(booking.startsAt) }} – {{ dateTime(booking.endsAt) }} Europe/Berlin</p>
-    <p>{{ booking.durationMinutes }} minutes</p>
-    <p>Your name: {{ booking.guestName }}</p>
-    <p>Email address: {{ booking.guestEmail }}</p>
-    <p class="plain-text">Additional notes: {{ booking.notes }}</p>
-    <p>No confirmation email will be sent.</p>
-    <RouterLink class="book-another" to="/book">Book another meeting</RouterLink>
-  </section>
-  <section v-else aria-labelledby="guest-heading">
+  <section aria-labelledby="guest-heading">
     <h2 id="guest-heading">Guest details</h2>
     <p>Your selection is not reserved.</p>
     <form novalidate @submit.prevent="confirm">
