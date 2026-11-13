@@ -3,6 +3,11 @@ module Api
     class BookingsController < ApplicationController
       def create
         response.headers["Cache-Control"] = "no-store"
+        if params.key?(:attemptToken) && !BookingRetry.valid?(params[:attemptToken])
+          render json: { code: "validation", message: "Invalid booking attempt. Please reload and try again." },
+            status: :unprocessable_content
+          return
+        end
         guest = GuestDetails.new(params[:guestName], params[:guestEmail], params[:notes])
         unless guest.errors.empty?
           render json: { code: "validation", message: "Please correct the highlighted fields.", errors: guest.errors },
@@ -10,6 +15,11 @@ module Api
           return
         end
         Booking.transaction do
+          attempt_digest = BookingRetry.lock(params[:attemptToken])
+          if attempt_digest && (original = Booking.find_by(attempt_digest: attempt_digest))
+            render json: original.confirmation, status: :created
+            return
+          end
           # Shared row locks allow concurrent confirmations but serialize offer
           # edits/hiding against the reviewed-details check and saved snapshot.
           meeting_type = MeetingType.lock("FOR SHARE").find_by(slug: params[:slug], published: true)
@@ -45,7 +55,7 @@ module Api
           booking = Booking.create!(meeting_type: meeting_type, occupancy: occupancy,
             starts_at: starts_at, ends_at: ends_at, meeting_name: meeting_type.name,
             meeting_description: meeting_type.description, duration_minutes: meeting_type.duration_minutes,
-            guest_name: guest.name, guest_email: guest.email, notes: guest.notes)
+            guest_name: guest.name, guest_email: guest.email, notes: guest.notes, attempt_digest: attempt_digest)
           # An exclusion/FK lock can wait after the initial schedule check.
           # Recheck at the end of the transaction, rolling back both records.
           if starts_at <= Time.current

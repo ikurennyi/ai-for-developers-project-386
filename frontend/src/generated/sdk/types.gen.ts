@@ -163,6 +163,10 @@ export type Booking = {
  */
 export type BookingConfirmation = {
     /**
+     * Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage.
+     */
+    attemptToken?: string;
+    /**
      * Exact selected start instant.
      */
     startsAt: string;

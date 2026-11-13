@@ -69,9 +69,58 @@ RSpec.describe "Concurrent booking HTTP requests", type: :request do
     threads&.each { |thread| thread.join(15) }
   end
 
+  it "serializes concurrent retries of uncommitted and committed attempts without a self-conflict" do
+    type = @types.first
+    payload = confirmation(type, "09:00").merge(attemptToken: SecureRandom.hex(32))
+    threads = []
+    # Hold the same advisory lock from outside HTTP to prove all independent
+    # requests overlap at the persistent attempt boundary, not just Ruby scheduling.
+    2.times do
+      pids = Queue.new
+      ActiveRecord::Base.connection_pool.with_connection do |blocker|
+        blocker.transaction do
+          key = Digest::SHA256.hexdigest(payload[:attemptToken])[0, 16].to_i(16) - (2**63)
+          blocker.execute("SELECT pg_advisory_xact_lock(#{key})")
+          threads = 3.times.map do
+            Thread.new do
+              ActiveRecord::Base.connection_pool.with_connection do |connection|
+                pids << connection.select_value("SELECT pg_backend_pid()")
+                session = ActionDispatch::Integration::Session.new(Rails.application)
+                session.post "/api/v1/meeting-types/#{type.slug}/bookings", params: payload, as: :json
+                OpenapiContract.validate!(session.request, session.response)
+                [ session.response.status, JSON.parse(session.response.body) ]
+              end
+            end
+          end
+          connections = Timeout.timeout(10) { 3.times.map { pids.pop } }
+          expect(connections.uniq.length).to eq(3)
+          Timeout.timeout(10) do
+            loop do
+              blocker.execute("SELECT pg_stat_clear_snapshot()")
+              break if blocker.select_value(<<~SQL) == 3
+                SELECT count(*) FROM pg_stat_activity
+                WHERE pid IN (#{connections.map { |pid| Integer(pid) }.join(",")})
+                  AND wait_event = 'advisory'
+              SQL
+              sleep 0.01
+            end
+          end
+        end
+      end
+      results = Timeout.timeout(10) { threads.map(&:value) }
+      expect(results.map(&:first)).to eq([ 201, 201, 201 ])
+      expect(results.map(&:last).uniq.length).to eq(1)
+      expect(Booking.count).to eq(1)
+      expect(Occupancy.count).to eq(1)
+    end
+  ensure
+    threads&.each { |thread| thread.join(15) }
+  end
+
   it "rolls back both records if an insert wait reaches the selected start before confirmation commits" do
     thread = nil
     pid = Queue.new
+    payload = confirmation(@types.first, "09:00").merge(attemptToken: SecureRandom.hex(32))
     ActiveRecord::Base.connection_pool.with_connection do |blocker|
       blocker.transaction do
         blocker.execute("LOCK TABLE occupancies IN SHARE MODE")
@@ -80,7 +129,7 @@ RSpec.describe "Concurrent booking HTTP requests", type: :request do
             pid << connection.select_value("SELECT pg_backend_pid()")
             session = ActionDispatch::Integration::Session.new(Rails.application)
             session.post "/api/v1/meeting-types/#{@types.first.slug}/bookings",
-              params: confirmation(@types.first, "09:00"), as: :json
+              params: payload, as: :json
             [ session.response.status, JSON.parse(session.response.body) ]
           end
         end
@@ -103,6 +152,12 @@ RSpec.describe "Concurrent booking HTTP requests", type: :request do
     expect(body).to include("code" => "invalid_interval")
     expect(Booking.count).to eq(0)
     expect(Occupancy.count).to eq(0)
+    travel_to Time.iso8601("2026-11-13T07:00:00Z")
+    post "/api/v1/meeting-types/#{@types.first.slug}/bookings", params: payload, as: :json
+    expect(response).to have_http_status(:created)
+    OpenapiContract.validate!(request, response)
+    expect(Booking.count).to eq(1)
+    expect(Occupancy.count).to eq(1)
   ensure
     thread&.join(15)
   end

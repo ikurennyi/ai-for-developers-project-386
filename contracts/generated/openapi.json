@@ -737,7 +737,7 @@
       "post": {
         "operationId": "confirmBooking",
         "summary": "Explicitly confirm a meeting",
-        "description": "Atomically rechecks current publication, reviewed details, schedule and shared occupancy. Returns a private creation response with no public read endpoint. All responses are no-store.",
+        "description": "Atomically rechecks current publication, reviewed details, schedule and shared occupancy. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. No public read endpoint or guest-information lookup. All responses are no-store.",
         "parameters": [
           {
             "name": "slug",
@@ -1137,6 +1137,11 @@
           "guestEmail"
         ],
         "properties": {
+          "attemptToken": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage."
+          },
           "startsAt": {
             "type": "string",
             "format": "date-time",

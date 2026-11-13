@@ -380,6 +380,9 @@ model ReviewedMeeting {
 @doc("An explicit confirmation; reading availability never creates this record.")
 @example(#{ startsAt: utcDateTime.fromISO("2026-11-13T09:00:00Z"), meetingType: #{ name: "Discussion", description: "", durationMinutes: 20 }, guestName: "Guest", guestEmail: "guest@example.com", notes: "" })
 model BookingConfirmation {
+  @doc("Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage.")
+  @pattern("^[0-9a-f]{64}$")
+  attemptToken?: string;
   @doc("Exact selected start instant.") startsAt: utcDateTime;
   @doc("Details the guest reviewed.") meetingType: ReviewedMeeting;
   @doc("Guest name, trimmed to 1–100 characters.") guestName: string;
@@ -424,7 +427,7 @@ model BookingError {
 @tag("Bookings")
 @operationId("confirmBooking")
 @summary("Explicitly confirm a meeting")
-@doc("Atomically rechecks current publication, reviewed details, schedule and shared occupancy. Returns a private creation response with no public read endpoint. All responses are no-store.")
+@doc("Atomically rechecks current publication, reviewed details, schedule and shared occupancy. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. No public read endpoint or guest-information lookup. All responses are no-store.")
 op confirmBooking(
   @doc("Current published address.") @path slug: string,
   @doc("Reviewed meeting, selected instant and guest details.") @body confirmation: BookingConfirmation,
