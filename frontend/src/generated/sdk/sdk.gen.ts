@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses } from './types.gen';
+import type { CreateAdminMeetingTypeData, CreateAdminMeetingTypeErrors, CreateAdminMeetingTypeResponses, GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetHealthData, GetHealthResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesErrors, ListAdminMeetingTypesResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,40 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * List all meeting types
+ *
+ * Requires administrator access. Includes hidden drafts and publication state; responses are not cacheable.
+ */
+export const listAdminMeetingTypes = <ThrowOnError extends boolean = false>(options?: Options<ListAdminMeetingTypesData, ThrowOnError>): RequestResult<ListAdminMeetingTypesResponses, ListAdminMeetingTypesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdminMeetingTypesResponses, ListAdminMeetingTypesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/meeting-types',
+    ...options
+});
+
+/**
+ * Create a hidden meeting type
+ *
+ * Save never publishes. Requires same-origin protection. Invalid input or an occupied address returns field errors without saving or renaming.
+ */
+export const createAdminMeetingType = <ThrowOnError extends boolean = false>(options: Options<CreateAdminMeetingTypeData, ThrowOnError>): RequestResult<CreateAdminMeetingTypeResponses, CreateAdminMeetingTypeErrors, ThrowOnError> => (options.client ?? client).post<CreateAdminMeetingTypeResponses, CreateAdminMeetingTypeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'calendar_admin',
+            type: 'apiKey'
+        }],
+    url: '/admin/meeting-types',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Revoke the current administrator session

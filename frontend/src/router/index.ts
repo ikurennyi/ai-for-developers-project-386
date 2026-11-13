@@ -3,6 +3,8 @@ import HomeView from '../views/HomeView.vue'
 import AdminLayout from '../views/AdminLayout.vue'
 import AdminLoginView from '../views/AdminLoginView.vue'
 import AdminPageView from '../views/AdminPageView.vue'
+import AdminLinksView from '../views/AdminLinksView.vue'
+import NewMeetingTypeView from '../views/NewMeetingTypeView.vue'
 import { hasAdminSession } from '../admin/session'
 import MeetingTypesView from '../views/MeetingTypesView.vue'
 
@@ -18,7 +20,8 @@ const router = createRouter({
       meta: { administrator: true },
       children: [
         { path: '', name: 'admin-home', component: AdminPageView, props: { title: 'Home' } },
-        { path: 'links', name: 'admin-links', component: AdminPageView, props: { title: 'Links' } },
+        { path: 'links', name: 'admin-links', component: AdminLinksView },
+        { path: 'links/new', name: 'admin-new-meeting-type', component: NewMeetingTypeView },
         {
           path: 'bookings',
           name: 'admin-bookings',

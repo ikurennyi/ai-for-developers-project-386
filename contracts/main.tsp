@@ -123,16 +123,21 @@ interface Authentication {
 @example(#{ id: "29a71c26-c842-407d-bcd2-e93c8ea0ceab", name: "Short meeting", description: "A quick conversation.", durationMinutes: 15, slug: "short-meeting" })
 model MeetingType {
   @doc("Immutable system-assigned identifier.")
+  @example("29a71c26-c842-407d-bcd2-e93c8ea0ceab")
   id: string;
   @doc("Meeting name.")
+  @example("Short meeting")
   name: string;
   @doc("Optional meeting description; empty when not supplied.")
+  @example("A quick conversation.")
   description: string;
   @doc("Meeting duration in whole minutes.")
+  @example(15)
   @minValue(1)
   @maxValue(540)
   durationMinutes: int32;
   @doc("Current unique public address segment.")
+  @example("short-meeting")
   slug: string;
 }
 
@@ -154,3 +159,84 @@ op listMeetingTypes(): {
   @header contentType: "application/json";
   @body body: MeetingTypeList;
 };
+
+@doc("An administrator-visible offer, including hidden drafts.")
+@example(#{ id: "29a71c26-c842-407d-bcd2-e93c8ea0ceab", name: "Planning", description: "", durationMinutes: 20, slug: "planning", published: false })
+model AdminMeetingType {
+  ...MeetingType;
+  @doc("True only after a separate publication action.")
+  @example(true)
+  published: boolean;
+}
+
+@doc("All meeting types in creation order.")
+@example(#{ meetingTypes: #[] })
+model AdminMeetingTypeList {
+  @doc("Published and hidden offers.")
+  meetingTypes: AdminMeetingType[];
+}
+
+@doc("New hidden meeting type. Trim name and address at their edges only. Description consisting only of whitespace becomes empty. Unknown fields cannot assign identity or publication.")
+@example(#{ name: "Planning", description: "", durationMinutes: 20, slug: "planning" })
+model NewMeetingType {
+  @doc("After trimming: 1–100 characters.")
+  name: string;
+  @doc("Optional description, at most 2000 characters.")
+  description?: string;
+  @doc("A whole number from 1 to 540, not restricted to a 15-minute multiple.")
+  durationMinutes: int32;
+  @doc("After trimming: 1–80 lowercase Latin letters/digits with single hyphens between nonempty parts. Unique among all offers; never silently renamed.")
+  slug: string;
+}
+
+@doc("English errors keyed by the form's field names.")
+@example(#{ name: #["can't be blank"], description: #["is too long (maximum is 2000 characters)"], durationMinutes: #["must be a whole number from 1 to 540"], slug: #["has already been taken"] })
+model MeetingTypeFieldErrors {
+  @doc("Name errors.")
+  name?: string[];
+  @doc("Description errors.")
+  description?: string[];
+  @doc("Duration errors.")
+  durationMinutes?: string[];
+  @doc("Address errors, including concurrent collisions.")
+  slug?: string[];
+}
+
+@error
+@doc("The offer was not saved; preserve the form and correct these fields.")
+model InvalidMeetingType {
+  @statusCode statusCode: 422;
+  @body body: {
+    @doc("Safe English summary.")
+    @example("Please correct the highlighted fields.")
+    message: string;
+    @doc("Errors beside the relevant fields.")
+    @example(#{ slug: #["has already been taken"] })
+    errors: MeetingTypeFieldErrors;
+  };
+}
+
+@route("/admin/meeting-types")
+@tag("Administrator meeting types")
+@useAuth(AdminCookie)
+interface AdminMeetingTypes {
+  @get
+  @operationId("listAdminMeetingTypes")
+  @summary("List all meeting types")
+  @doc("Requires administrator access. Includes hidden drafts and publication state; responses are not cacheable.")
+  list(): AdminMeetingTypeList | Unauthenticated;
+
+  @post
+  @operationId("createAdminMeetingType")
+  @summary("Create a hidden meeting type")
+  @doc("Save never publishes. Requires same-origin protection. Invalid input or an occupied address returns field errors without saving or renaming.")
+  create(
+    @doc("Required mutation protection header.")
+    @header("X-Calendar-Request") calendarRequest: "1",
+    @doc("The administrator's explicit offer details.")
+    @body body: NewMeetingType
+  ): {
+    @statusCode statusCode: 201;
+    @body body: AdminMeetingType;
+  } | InvalidMeetingType | Unauthenticated | Forbidden;
+}
