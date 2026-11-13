@@ -94,6 +94,26 @@ RSpec.describe "Administrator meeting types", type: :request do
     expect(response.parsed_body).to include("name" => "Name", "slug" => "unicode-edge")
   end
 
+  it "empties all ECMAScript trim whitespace before description length validation, preserving nonempty text exactly" do
+    login
+    whitespace = " \t\n\v\f\r\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
+    [ whitespace, "\ufeff" * 2001, " " * 2001, whitespace * 100, "#{whitespace}Text#{whitespace}", "\u0085" ].each_with_index do |description, index|
+      create_type(name: "#{whitespace}Name#{whitespace}", slug: "#{whitespace}whitespace-#{index}#{whitespace}",
+        durationMinutes: 20, description: description)
+      expect(response).to have_http_status(:created)
+      OpenapiContract.validate!(request, response)
+      expected = index < 4 ? "" : description
+      expect(response.parsed_body).to include("name" => "Name", "slug" => "whitespace-#{index}", "description" => expected)
+      id = response.parsed_body.fetch("id")
+      put "/api/v1/admin/meeting-types/#{id}",
+        params: { name: "Name", slug: "whitespace-#{index}", durationMinutes: 20, description: description },
+        headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      OpenapiContract.validate!(request, response)
+      expect(response.parsed_body["description"]).to eq(expected)
+    end
+  end
+
   it "reports address collisions with both published and hidden types without automatic suffixes" do
     MeetingType.create!(name: "Published", duration_minutes: 15, slug: "published", published: true)
     login

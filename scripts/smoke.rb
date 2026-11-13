@@ -169,7 +169,11 @@ class Smoke
     end
     raise "intentional failure after real server readiness" if @mode == "--fail-after-ready"
     stop(rails_pid) if @mode == "--probe-browser-failure"
+    # The deliberate missing-server probe needs one precise health witness, not
+    # a cascade of unrelated booking/auth failures that bury its diagnostic.
+    browser_args = @mode == "--probe-browser-failure" ? [ "--testNamePattern", "renders the service homepage in the root application" ] : []
     puts command("chromium", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
+      *browser_args,
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
         "SMOKE_RUNTIME_DIR" => @directory })
@@ -208,7 +212,7 @@ class Smoke
     # pass its own login budget; exact throttling is tested through HTTP.
     puts command("reset-browser-login-budget", "bundle", "exec", "rails", "runner",
       "AdminLoginLimit.delete_all", directory: backend)
-    start("rails-restarted", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
+    rails_pid = start("rails-restarted", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
       "-P", File.join(@directory, "rails-restarted.pid"), "--log-to-stdout", directory: backend)
     ready("restarted Rails") { http_ready(backend_port, "/up") }
     raise "meeting types changed across application restart" unless Net::HTTP.get(offers_url) == persisted_offers
@@ -233,6 +237,20 @@ class Smoke
     puts command("admin-recovery-fixtures", "bundle", "exec", "rails", "runner",
       "AdminLoginLimit.delete_all", directory: backend)
     puts command("admin-form-recovery", "node", "e2e/admin-form-recovery.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    # Final independent fixtures use only this disposable database. Empty Links
+    # is genuine persisted absence, not an API stub or a product deletion feature.
+    puts command("links-empty-fixtures", "bundle", "exec", "rails", "runner",
+      "Booking.delete_all; Occupancy.delete_all; MeetingType.delete_all; AdminLoginLimit.delete_all", directory: backend)
+    puts command("links-states", "node", "e2e/links-states.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("boundary-fixtures", "bundle", "exec", "rails", "db:seed", directory: backend)
+    stop(rails_pid)
+    start("rails-month-boundary", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
+      "-c", File.join(ROOT, "test/fixtures/calendar_boundary.ru"),
+      "-P", File.join(@directory, "rails-boundary.pid"), "--log-to-stdout", directory: backend)
+    ready("month-boundary Rails") { http_ready(backend_port, "/up") }
+    puts command("calendar-boundary", "node", "e2e/calendar-boundary.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
   end
 

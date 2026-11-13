@@ -43,19 +43,17 @@ module Api
           end
           starts_at = selected_start
           now = Time.current
-          snapshot = CalendarAvailability.new(meeting_type, now: now).as_json
-          interval = snapshot[:days].flat_map { |day| day[:intervals] }
-            .find { |entry| Time.iso8601(entry[:startsAt]) == starts_at }
+          interval = CalendarAvailability.new(meeting_type, now: now).interval_at(starts_at)
           unless interval && starts_at > now
             render json: { code: "invalid_interval",
               message: "This selection is no longer valid. Please choose another time." }, status: :conflict
             return
           end
-          unless interval[:available]
+          unless interval.available
             occupied
             return
           end
-          ends_at = starts_at + meeting_type.duration_minutes.minutes
+          ends_at = interval.ends_at
           occupancy = Occupancy.create!(starts_at: starts_at, ends_at: ends_at)
           booking = Booking.create!(meeting_type: meeting_type, occupancy: occupancy,
             starts_at: starts_at, ends_at: ends_at, meeting_name: meeting_type.name,

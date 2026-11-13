@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteAdminBooking, type Booking } from '../generated/sdk'
-import { requireAdminLogin } from '../admin/session'
+import { adminRequestHeaders, requireAdminLogin } from '../admin/session'
 
 const props = defineProps<{ booking: Booking }>()
 const emit = defineEmits<{ deleted: [] }>()
@@ -35,7 +35,7 @@ async function remove() {
   try {
     const result = await deleteAdminBooking({
       path: { id: props.booking.id },
-      headers: { 'X-Calendar-Request': '1' },
+      headers: adminRequestHeaders,
     })
     if (result.response?.status === 401) {
       dialog.value?.close()

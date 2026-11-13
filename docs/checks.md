@@ -60,6 +60,7 @@ another check. Contract artifacts are regenerated only in temporary directories.
 ## Actual verification, 2026-11-11
 
 Current full-cycle evidence and pending review/CI: [acceptance](acceptance.md).
+For the booking product, see the [#22 acceptance traceability and review follow-up](spec-22-traceability.md).
 The following records the original T8 implementation run.
 
 On macOS arm64, Docker Engine 29.9.3 and the pinned toolchain:

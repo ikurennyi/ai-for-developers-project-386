@@ -1,4 +1,5 @@
 import type { Availability, Booking, BookingConfirmation, CalendarInterval } from '../generated/sdk'
+import { tabHistory } from '../tabHistory'
 
 export interface BookingAttempt {
   calendar: Availability
@@ -22,19 +23,12 @@ interface GuestState {
 
 // Unlike sessionStorage, session history is not copied by window.open(url).
 // No guest data or lookup capability lives in URLs or shared browser storage.
-const saved = window.history.state?.calendarGuest as GuestState | undefined
-const state: GuestState =
-  saved && sessionStorage.getItem(`calendar-guest:${saved.id}`) === String(saved.generation)
-    ? saved
-    : { id: crypto.randomUUID(), generation: 0, drafts: {} }
-
-export function persistGuestState() {
-  sessionStorage.setItem(`calendar-guest:${state.id}`, String(state.generation))
-  window.history.replaceState(
-    { ...window.history.state, calendarGuest: JSON.parse(JSON.stringify(state)) },
-    '',
-  )
-}
+const { state, persist: persistGuestState } = tabHistory<GuestState>(
+  'calendarGuest',
+  'calendar-guest',
+  () => ({ id: crypto.randomUUID(), generation: 0, drafts: {} }),
+)
+export { persistGuestState }
 
 export function guestDraft(slug: string): GuestDraft {
   return { ...(state.drafts[slug] ?? { guestName: '', guestEmail: '', notes: '' }) }

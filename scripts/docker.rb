@@ -57,7 +57,7 @@ args = case command
 when "build" then [ "build", "--pull" ]
 when "up" then [ "up", "-d", "--wait", "--wait-timeout", "180" ]
 when "restart"
-  base = [ "docker", "compose", "--project-name", project, "--env-file", config, "-f", File.join(root, "compose.application.yml") ]
+  base = [ "docker-compose", "--project-name", project, "--env-file", config, "-f", File.join(root, "compose.application.yml") ]
   system(*base, "restart", "app", exception: true)
   [ "up", "-d", "--wait", "--wait-timeout", "180" ]
 when "recreate" then [ "up", "-d", "--force-recreate", "--no-deps", "--wait", "--wait-timeout", "180", "app" ]
@@ -67,5 +67,5 @@ when "logs" then [ "logs", "--tail", "100" ]
 when "exec" then [ "exec", "-T", *ARGV ]
 else abort "Usage: ruby scripts/docker.rb setup|build|up|restart|recreate|stop|status|logs|exec ..."
 end
-exec("docker", "compose", "--project-name", project, "--env-file", config,
+exec("docker-compose", "--project-name", project, "--env-file", config,
      "-f", File.join(root, "compose.application.yml"), *args)
