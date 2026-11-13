@@ -8,11 +8,11 @@ try {
   page.setDefaultTimeout(10000)
   const origin = process.env.APP_ORIGIN
   assert.ok(origin)
-  async function login() {
-    await page.getByRole('heading', { name: 'Administrator login' }).waitFor()
-    await page.getByLabel('Username', { exact: true }).fill('owner-browser')
-    await page.getByLabel('Password', { exact: true }).fill('browser-only-password-24!')
-    await page.getByRole('button', { name: 'Log in', exact: true }).click()
+  async function login(target = page) {
+    await target.getByRole('heading', { name: 'Administrator login' }).waitFor()
+    await target.getByLabel('Username', { exact: true }).fill('owner-browser')
+    await target.getByLabel('Password', { exact: true }).fill('browser-only-password-24!')
+    await target.getByRole('button', { name: 'Log in', exact: true }).click()
   }
   await page.goto(`${origin}/admin/links/new`)
   await login()
@@ -33,6 +33,18 @@ try {
   await page.evaluate(() => window.open('/admin/links/new', '_blank'))
   const popup = await popupPromise
   await popup.getByRole('heading', { name: 'Administrator login' }).waitFor()
+  // A separate browser profile must authenticate independently and cannot
+  // recover either the login URL's draft or the original form's private fields.
+  const otherContext = await browser.newContext()
+  const otherPage = await otherContext.newPage()
+  otherPage.setDefaultTimeout(10000)
+  await otherPage.goto(page.url())
+  await login(otherPage)
+  await otherPage.getByRole('heading', { name: 'New meeting type' }).waitFor()
+  for (const label of ['Name', 'Description', 'Duration (minutes)', 'Public address']) {
+    assert.equal(await otherPage.getByLabel(label, { exact: true }).inputValue(), '')
+  }
+  await otherContext.close()
   let mutations = 0
   page.on('request', (request) => {
     if (
@@ -63,6 +75,32 @@ try {
       'Private recovery notes',
     ),
   )
+  // Native document navigation is not a Vue Router confirmation. Real user
+  // interaction above supplies Chromium's sticky activation for beforeunload.
+  const cancelWarning = page.waitForEvent('dialog')
+  const canceledNavigation = page.goto(`${origin}/`).catch((error) => error)
+  const warning = await cancelWarning
+  assert.equal(warning.type(), 'beforeunload')
+  await warning.dismiss()
+  assert.ok((await canceledNavigation) instanceof Error)
+  assert.equal(new URL(page.url()).pathname, '/admin/links/new')
+  assert.equal(await name.inputValue(), 'Private unfinished offer')
+
+  const discardWarning = page.waitForEvent('dialog')
+  const reload = page.reload()
+  const discard = await discardWarning
+  assert.equal(discard.type(), 'beforeunload')
+  await discard.accept()
+  await reload
+  await page.getByRole('heading', { name: 'New meeting type' }).waitFor()
+  for (const label of ['Name', 'Description', 'Duration (minutes)', 'Public address']) {
+    assert.equal(
+      await page.getByLabel(label, { exact: true }).inputValue(),
+      '',
+      'Confirmed native departure must discard the recovered draft',
+    )
+  }
+  await name.fill('Private unfinished offer')
   page.once('dialog', (dialog) => dialog.dismiss())
   await page.getByRole('link', { name: 'Cancel', exact: true }).click()
   assert.equal(await name.inputValue(), 'Private unfinished offer')
@@ -120,7 +158,7 @@ try {
   assert.equal(new URL(page.url()).origin, origin)
   assert.equal(new URL(page.url()).pathname, '/admin')
   console.log(
-    'Administrator tab-private recovery, refresh, opener privacy, no replay and discard passed.',
+    'Administrator tab-private recovery, refresh, opener/browser isolation, native beforeunload, no replay and discard passed.',
   )
 } finally {
   await browser.close()
