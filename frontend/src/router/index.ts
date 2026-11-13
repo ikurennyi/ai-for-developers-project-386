@@ -9,12 +9,19 @@ import NewMeetingTypeView from '../views/NewMeetingTypeView.vue'
 import { hasAdminSession } from '../admin/session'
 import MeetingTypesView from '../views/MeetingTypesView.vue'
 import CalendarView from '../views/CalendarView.vue'
+import { persistGuestState } from '../guest/state'
+import BookingConfirmationView from '../views/BookingConfirmationView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'home', component: HomeView },
     { path: '/book', name: 'meeting-types', component: MeetingTypesView },
+    {
+      path: '/confirmation/:token',
+      name: 'booking-confirmation',
+      component: BookingConfirmationView,
+    },
     { path: '/book/:slug', name: 'meeting-calendar', component: CalendarView },
     { path: '/book/:slug/details', name: 'meeting-form', component: CalendarView },
     { path: '/admin/login', name: 'admin-login', component: AdminLoginView },
@@ -46,6 +53,10 @@ router.beforeEach(async (to) => {
     // Fail closed on network failure; the login page offers an explicit retry.
   }
   return { name: 'admin-login', query: { returnTo: to.fullPath } }
+})
+
+router.afterEach((_to, _from, failure) => {
+  if (!failure) persistGuestState()
 })
 
 export default router

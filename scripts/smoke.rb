@@ -188,6 +188,8 @@ class Smoke
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("calendar-navigation", "node", "e2e/calendar-navigation.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("guest-draft", "node", "e2e/guest-draft.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     # A fresh application process must read the same persisted offers.
     offers_url = URI("http://127.0.0.1:#{backend_port}/api/v1/meeting-types")
     persisted_offers = Net::HTTP.get(offers_url)
