@@ -17,9 +17,157 @@
     },
     {
       "name": "Administrator authentication"
+    },
+    {
+      "name": "Administrator meeting types"
     }
   ],
   "paths": {
+    "/admin/meeting-types": {
+      "get": {
+        "operationId": "listAdminMeetingTypes",
+        "summary": "List all meeting types",
+        "description": "Requires administrator access. Includes hidden drafts and publication state; responses are not cacheable.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingTypeList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createAdminMeetingType",
+        "summary": "Create a hidden meeting type",
+        "description": "Save never publishes. Requires same-origin protection. Invalid input or an occupied address returns field errors without saving or renaming.",
+        "parameters": [
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The offer was not saved; preserve the form and correct these fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Safe English summary.",
+                      "example": "Please correct the highlighted fields."
+                    },
+                    "errors": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/MeetingTypeFieldErrors"
+                        }
+                      ],
+                      "description": "Errors beside the relevant fields.",
+                      "example": {
+                        "slug": [
+                          "has already been taken"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "errors"
+                  ],
+                  "additionalProperties": {
+                    "not": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMeetingType"
+              }
+            }
+          },
+          "description": "The administrator's explicit offer details."
+        },
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/admin/session": {
       "post": {
         "operationId": "loginAdmin",
@@ -350,6 +498,86 @@
   },
   "components": {
     "schemas": {
+      "AdminMeetingType": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "durationMinutes",
+          "slug",
+          "published"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Immutable system-assigned identifier.",
+            "example": "29a71c26-c842-407d-bcd2-e93c8ea0ceab"
+          },
+          "name": {
+            "type": "string",
+            "description": "Meeting name.",
+            "example": "Short meeting"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional meeting description; empty when not supplied.",
+            "example": "A quick conversation."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 540,
+            "description": "Meeting duration in whole minutes.",
+            "example": 15
+          },
+          "slug": {
+            "type": "string",
+            "description": "Current unique public address segment.",
+            "example": "short-meeting"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "True only after a separate publication action.",
+            "example": true
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "An administrator-visible offer, including hidden drafts.",
+        "example": {
+          "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+          "name": "Planning",
+          "description": "",
+          "durationMinutes": 20,
+          "slug": "planning",
+          "published": false
+        }
+      },
+      "AdminMeetingTypeList": {
+        "type": "object",
+        "required": [
+          "meetingTypes"
+        ],
+        "properties": {
+          "meetingTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminMeetingType"
+            },
+            "description": "Published and hidden offers."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "All meeting types in creation order.",
+        "example": {
+          "meetingTypes": []
+        }
+      },
       "AdminSession": {
         "type": "object",
         "required": [
@@ -832,26 +1060,31 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Immutable system-assigned identifier."
+            "description": "Immutable system-assigned identifier.",
+            "example": "29a71c26-c842-407d-bcd2-e93c8ea0ceab"
           },
           "name": {
             "type": "string",
-            "description": "Meeting name."
+            "description": "Meeting name.",
+            "example": "Short meeting"
           },
           "description": {
             "type": "string",
-            "description": "Optional meeting description; empty when not supplied."
+            "description": "Optional meeting description; empty when not supplied.",
+            "example": "A quick conversation."
           },
           "durationMinutes": {
             "type": "integer",
             "format": "int32",
             "minimum": 1,
             "maximum": 540,
-            "description": "Meeting duration in whole minutes."
+            "description": "Meeting duration in whole minutes.",
+            "example": 15
           },
           "slug": {
             "type": "string",
-            "description": "Current unique public address segment."
+            "description": "Current unique public address segment.",
+            "example": "short-meeting"
           }
         },
         "additionalProperties": {
@@ -864,6 +1097,57 @@
           "description": "A quick conversation.",
           "durationMinutes": 15,
           "slug": "short-meeting"
+        }
+      },
+      "MeetingTypeFieldErrors": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Name errors."
+          },
+          "description": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Description errors."
+          },
+          "durationMinutes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Duration errors."
+          },
+          "slug": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Address errors, including concurrent collisions."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "English errors keyed by the form's field names.",
+        "example": {
+          "name": [
+            "can't be blank"
+          ],
+          "description": [
+            "is too long (maximum is 2000 characters)"
+          ],
+          "durationMinutes": [
+            "must be a whole number from 1 to 540"
+          ],
+          "slug": [
+            "has already been taken"
+          ]
         }
       },
       "MeetingTypeList": {
@@ -908,6 +1192,43 @@
         "description": "Indistinguishable response for hidden and nonexistent meeting types.",
         "example": {
           "message": "Meeting type unavailable"
+        }
+      },
+      "NewMeetingType": {
+        "type": "object",
+        "required": [
+          "name",
+          "durationMinutes",
+          "slug"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "After trimming: 1–100 characters."
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description, at most 2000 characters."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "A whole number from 1 to 540, not restricted to a 15-minute multiple."
+          },
+          "slug": {
+            "type": "string",
+            "description": "After trimming: 1–80 lowercase Latin letters/digits with single hyphens between nonempty parts. Unique among all offers; never silently renamed."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "New hidden meeting type. Trim name and address at their edges only. Description consisting only of whitespace becomes empty. Unknown fields cannot assign identity or publication.",
+        "example": {
+          "name": "Planning",
+          "description": "",
+          "durationMinutes": 20,
+          "slug": "planning"
         }
       },
       "ReviewedMeeting": {

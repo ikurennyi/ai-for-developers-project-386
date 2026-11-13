@@ -5,6 +5,48 @@ export type ClientOptions = {
 };
 
 /**
+ * An administrator-visible offer, including hidden drafts.
+ */
+export type AdminMeetingType = {
+    /**
+     * Immutable system-assigned identifier.
+     */
+    id: string;
+    /**
+     * Meeting name.
+     */
+    name: string;
+    /**
+     * Optional meeting description; empty when not supplied.
+     */
+    description: string;
+    /**
+     * Meeting duration in whole minutes.
+     */
+    durationMinutes: number;
+    /**
+     * Current unique public address segment.
+     */
+    slug: string;
+    /**
+     * True only after a separate publication action.
+     */
+    published: boolean;
+    [key: string]: unknown;
+};
+
+/**
+ * All meeting types in creation order.
+ */
+export type AdminMeetingTypeList = {
+    /**
+     * Published and hidden offers.
+     */
+    meetingTypes: Array<AdminMeetingType>;
+    [key: string]: unknown;
+};
+
+/**
  * The single administrator's current session. Expiry never slides.
  */
 export type AdminSession = {
@@ -273,6 +315,29 @@ export type MeetingType = {
 };
 
 /**
+ * English errors keyed by the form's field names.
+ */
+export type MeetingTypeFieldErrors = {
+    /**
+     * Name errors.
+     */
+    name?: Array<string>;
+    /**
+     * Description errors.
+     */
+    description?: Array<string>;
+    /**
+     * Duration errors.
+     */
+    durationMinutes?: Array<string>;
+    /**
+     * Address errors, including concurrent collisions.
+     */
+    slug?: Array<string>;
+    [key: string]: unknown;
+};
+
+/**
  * The available public meeting offers.
  */
 export type MeetingTypeList = {
@@ -295,6 +360,29 @@ export type MeetingTypeUnavailable = {
 };
 
 /**
+ * New hidden meeting type. Trim name and address at their edges only. Description consisting only of whitespace becomes empty. Unknown fields cannot assign identity or publication.
+ */
+export type NewMeetingType = {
+    /**
+     * After trimming: 1–100 characters.
+     */
+    name: string;
+    /**
+     * Optional description, at most 2000 characters.
+     */
+    description?: string;
+    /**
+     * A whole number from 1 to 540, not restricted to a 15-minute multiple.
+     */
+    durationMinutes: number;
+    /**
+     * After trimming: 1–80 lowercase Latin letters/digits with single hyphens between nonempty parts. Unique among all offers; never silently renamed.
+     */
+    slug: string;
+    [key: string]: unknown;
+};
+
+/**
  * Meeting details explicitly reviewed by the guest, checked again at confirmation.
  */
 export type ReviewedMeeting = {
@@ -312,6 +400,83 @@ export type ReviewedMeeting = {
     durationMinutes: number;
     [key: string]: unknown;
 };
+
+export type ListAdminMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/meeting-types';
+};
+
+export type ListAdminMeetingTypesErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type ListAdminMeetingTypesError = ListAdminMeetingTypesErrors[keyof ListAdminMeetingTypesErrors];
+
+export type ListAdminMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingTypeList;
+};
+
+export type ListAdminMeetingTypesResponse = ListAdminMeetingTypesResponses[keyof ListAdminMeetingTypesResponses];
+
+export type CreateAdminMeetingTypeData = {
+    /**
+     * The administrator's explicit offer details.
+     */
+    body: NewMeetingType;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/meeting-types';
+};
+
+export type CreateAdminMeetingTypeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The offer was not saved; preserve the form and correct these fields.
+     */
+    422: {
+        /**
+         * Safe English summary.
+         */
+        message: string;
+        /**
+         * Errors beside the relevant fields.
+         */
+        errors: MeetingTypeFieldErrors;
+        [key: string]: unknown;
+    };
+};
+
+export type CreateAdminMeetingTypeError = CreateAdminMeetingTypeErrors[keyof CreateAdminMeetingTypeErrors];
+
+export type CreateAdminMeetingTypeResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: AdminMeetingType;
+};
+
+export type CreateAdminMeetingTypeResponse = CreateAdminMeetingTypeResponses[keyof CreateAdminMeetingTypeResponses];
 
 export type LogoutAdminData = {
     body?: never;
