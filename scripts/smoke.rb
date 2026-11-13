@@ -169,7 +169,11 @@ class Smoke
     end
     raise "intentional failure after real server readiness" if @mode == "--fail-after-ready"
     stop(rails_pid) if @mode == "--probe-browser-failure"
+    # The deliberate missing-server probe needs one precise health witness, not
+    # a cascade of unrelated booking/auth failures that bury its diagnostic.
+    browser_args = @mode == "--probe-browser-failure" ? [ "--testNamePattern", "renders the service homepage in the root application" ] : []
     puts command("chromium", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
+      *browser_args,
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
         "SMOKE_RUNTIME_DIR" => @directory })
