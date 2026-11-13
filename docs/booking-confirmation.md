@@ -55,3 +55,27 @@ time advancing while an INSERT waits. `mise run smoke` exercises validation,
 pending submission, plaintext success and shared occupancy through real Chromium,
 Rails and the SDK, including a fresh Rails process with the same database.
 Full local gate: `mise run check`; no external Actions result is implied.
+
+### Overlap-test sensitivity evidence (#49)
+
+Rule: bookings for different meeting types share one half-open occupancy calendar;
+the API must reject partial, nested, containing and identical overlaps with `409`,
+while allowing adjacency. The protecting request example is
+`Booking confirmation shares 10:00–10:20 occupancy across types, rejects every
+overlap shape and allows 10:30` in `backend/spec/requests/bookings_spec.rb:109`.
+
+Command: `mise run backend:test` (real PostgreSQL and HTTP request specs).
+
+- **Red, intentional local mutation only:** 103 examples, 26 failures. The named
+  example failed: after removing application overlap detection and the PostgreSQL
+  exclusion constraint from the test schema, a second type's partially
+  overlapping booking was created with HTTP `201` instead of the expected `409`.
+- **Green, after restoring the implementation, migration and schema:** 103
+  examples, 0 failures.
+
+An initial mutation run was not valid red evidence: it removed the constraint
+from the migration but not `backend/db/schema.rb`, which supplies the test
+database schema. The target remained protected by PostgreSQL. The successful red
+run removed both defenses in the isolated `test/overlap-sensitivity` worktree;
+the intentionally broken files were restored before the green run and are not
+part of this change.
