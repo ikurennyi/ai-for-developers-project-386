@@ -148,12 +148,16 @@ class Smoke
     probe = 'connection = ActiveRecord::Base.connection; raise "wrong database" unless connection.select_value("SELECT current_database()") == ENV.fetch("SMOKE_DATABASE"); raise "unexpected PostgreSQL version" unless connection.select_value("SHOW server_version").start_with?("18.3"); raise "connection failed" unless connection.select_value("SELECT 1") == 1; puts "PostgreSQL connection verified"'
     puts command("database-probe", "bundle", "exec", "rails", "runner", probe,
       directory: backend, env: { "SMOKE_DATABASE" => @database })
+    puts command("database-prepare", "bundle", "exec", "rails", "db:prepare", directory: backend,
+      env: { "SCHEMA" => File.join(@directory, "schema.rb") })
     if @mode == "--backend-test"
       puts command("rspec", "ruby", "bin/test", directory: backend,
         env: { "DATABASE_URL" => nil })
       return
     end
     backend_port = free_port
+    @env["ADMIN_USERNAME"] = "owner-browser"
+    @env["ADMIN_PASSWORD"] = "browser-only-password-24!"
     rails_pid = start("rails", "bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", backend_port.to_s,
       "-P", File.join(@directory, "rails.pid"), "--log-to-stdout", directory: backend)
     path = @mode == "--probe-readiness-timeout" ? "/deliberately-missing" : "/up"
@@ -165,7 +169,14 @@ class Smoke
     puts command("chromium", "node", "node_modules/vitest/vitest.mjs", "run", "--config", "vitest.browser.config.ts",
       timeout: 120, directory: File.join(ROOT, "frontend"),
       env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_BROWSER_PORT" => free_port.to_s,
-        "SMOKE_RUNTIME_DIR" => @directory })
+         "SMOKE_RUNTIME_DIR" => @directory })
+    app_port = free_port
+    start("vite-application", "node", "node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", app_port.to_s, "--strictPort",
+      directory: File.join(ROOT, "frontend"),
+      env: { "BACKEND_PORT" => backend_port.to_s, "SMOKE_RUNTIME_DIR" => @directory })
+    ready("Vite application") { http_ready(app_port, "/") }
+    puts command("admin-navigation", "node", "e2e/admin-navigation.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
   end
 
   def cleanup
