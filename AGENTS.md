@@ -22,3 +22,17 @@
   on completing project steps, not local test discovery.
 - Report local checks separately from unconfirmed external Actions. Final
   standards/spec review and repeated check precede closing #12; leave #1 untouched.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in this repository’s GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use a single-context layout with root `GLOSSARY.md` and `docs/adr/`. See `docs/agents/domain.md`.
