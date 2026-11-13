@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { guestDraft, saveGuestDraft, saveConfirmation } from '../guest/state'
-import {
-  confirmBooking,
-  type Availability,
-  type CalendarInterval,
-  type GuestErrors,
-} from '../generated/sdk'
+import { guestDraft, saveGuestDraft, saveConfirmation, pendingBookingAttempt } from '../guest/state'
+import { confirmGuestBooking } from '../guest/retry'
+import { type Availability, type CalendarInterval, type GuestErrors } from '../generated/sdk'
 
 const props = defineProps<{ calendar: Availability; interval: CalendarInterval }>()
 const emit = defineEmits<{
@@ -30,7 +26,10 @@ watch(
 )
 const errors = ref<GuestErrors>({})
 const pending = ref(false)
-const message = ref('')
+const uncertain = ref(
+  !!pendingBookingAttempt(props.calendar.meetingType.slug, props.interval.startsAt),
+)
+const message = ref(uncertain.value ? 'We couldn’t confirm the result. Please try again.' : '')
 
 function fieldError(value: unknown) {
   return typeof value === 'string' ? value : undefined
@@ -80,15 +79,10 @@ async function confirm() {
   pending.value = true
   message.value = ''
   try {
-    const { data, error } = await confirmBooking({
-      path: { slug: props.calendar.meetingType.slug },
-      body: {
-        startsAt: props.interval.startsAt,
-        meetingType: props.calendar.meetingType,
-        guestName: guestName.value,
-        guestEmail: guestEmail.value,
-        notes: notes.value,
-      },
+    const { data, error } = await confirmGuestBooking(props.calendar, props.interval, {
+      guestName: guestName.value,
+      guestEmail: guestEmail.value,
+      notes: notes.value,
     })
     if (data) {
       guestName.value = ''
@@ -97,11 +91,13 @@ async function confirm() {
       const token = saveConfirmation(data)
       await router.replace({ name: 'booking-confirmation', params: { token } })
     } else if (error) {
+      uncertain.value = false
       handleRejection(error)
     } else {
       throw new Error('Unconfirmed result')
     }
   } catch {
+    uncertain.value = true
     message.value = 'We couldn’t confirm the result. Please try again.'
   } finally {
     pending.value = false
@@ -120,7 +116,7 @@ async function confirm() {
         v-model="guestName"
         name="guestName"
         autocomplete="name"
-        :disabled="pending"
+        :disabled="pending || uncertain"
         :aria-invalid="!!errors.guestName"
         aria-describedby="guest-name-error"
       />
@@ -132,7 +128,7 @@ async function confirm() {
         name="guestEmail"
         type="email"
         autocomplete="email"
-        :disabled="pending"
+        :disabled="pending || uncertain"
         :aria-invalid="!!errors.guestEmail"
         aria-describedby="guest-email-error"
       />
@@ -143,7 +139,7 @@ async function confirm() {
         v-model="notes"
         name="notes"
         rows="5"
-        :disabled="pending"
+        :disabled="pending || uncertain"
         :aria-invalid="!!errors.notes"
         aria-describedby="notes-error"
       ></textarea>

@@ -939,7 +939,7 @@
       "post": {
         "operationId": "confirmBooking",
         "summary": "Explicitly confirm a meeting",
-        "description": "Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. Returns a private creation response with no public read endpoint. All responses are no-store.",
+        "description": "Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. Permanently deleted attempts return attempt_deleted without personal data or recreation. No public read endpoint or guest-information lookup. All responses are no-store.",
         "parameters": [
           {
             "name": "slug",
@@ -1468,6 +1468,11 @@
           "guestEmail"
         ],
         "properties": {
+          "attemptToken": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage."
+          },
           "startsAt": {
             "type": "string",
             "format": "date-time",
@@ -1523,9 +1528,10 @@
               "validation",
               "details_changed",
               "invalid_interval",
-              "occupied"
+              "occupied",
+              "attempt_deleted"
             ],
-            "description": "Machine-readable reason."
+            "description": "Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay."
           },
           "message": {
             "type": "string",

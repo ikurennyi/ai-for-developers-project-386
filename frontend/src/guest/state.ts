@@ -1,4 +1,10 @@
-import type { Booking } from '../generated/sdk'
+import type { Availability, Booking, BookingConfirmation, CalendarInterval } from '../generated/sdk'
+
+export interface BookingAttempt {
+  calendar: Availability
+  interval: CalendarInterval
+  body: BookingConfirmation
+}
 
 export interface GuestDraft {
   guestName: string
@@ -11,6 +17,7 @@ interface GuestState {
   generation: number
   drafts: Record<string, GuestDraft>
   confirmation?: { token: string; booking: Booking }
+  attempt?: BookingAttempt
 }
 
 // Unlike sessionStorage, session history is not copied by window.open(url).
@@ -41,6 +48,7 @@ export function saveGuestDraft(slug: string, draft: GuestDraft) {
 export function saveConfirmation(booking: Booking) {
   const token = crypto.randomUUID()
   state.drafts = {}
+  state.attempt = undefined
   // Old history snapshots must not resurrect a draft after success.
   state.generation++
   state.confirmation = { token, booking }
@@ -50,4 +58,16 @@ export function saveConfirmation(booking: Booking) {
 
 export function confirmedBooking(token: string) {
   return state.confirmation?.token === token ? state.confirmation.booking : undefined
+}
+
+export function pendingBookingAttempt(slug: string, startsAt: string) {
+  const attempt = state.attempt
+  return attempt?.calendar.meetingType.slug === slug && attempt.interval.startsAt === startsAt
+    ? attempt
+    : undefined
+}
+
+export function saveBookingAttempt(attempt?: BookingAttempt) {
+  state.attempt = attempt
+  persistGuestState()
 }

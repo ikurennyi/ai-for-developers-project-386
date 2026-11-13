@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_163100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -29,6 +29,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_160000) do
     t.string "username", null: false
     t.string "password_digest", null: false
     t.check_constraint "id = 1", name: "single_administrator"
+  end
+
+  create_table "booking_attempts", primary_key: "token_digest", id: :string, force: :cascade do |t|
+    t.uuid "booking_id"
+    t.index ["booking_id"], name: "index_booking_attempts_on_booking_id"
   end
 
   create_table "bookings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -72,6 +77,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_160000) do
     t.exclusion_constraint "tsrange(starts_at, ends_at, '[)'::text) WITH &&", using: :gist, name: "occupancies_do_not_overlap"
   end
 
+  add_foreign_key "booking_attempts", "bookings", on_delete: :nullify
   add_foreign_key "bookings", "meeting_types"
   add_foreign_key "bookings", "occupancies"
 end

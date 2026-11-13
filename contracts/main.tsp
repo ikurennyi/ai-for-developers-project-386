@@ -380,6 +380,9 @@ model ReviewedMeeting {
 @doc("An explicit confirmation; reading availability never creates this record.")
 @example(#{ startsAt: utcDateTime.fromISO("2026-11-13T09:00:00Z"), meetingType: #{ name: "Discussion", description: "", durationMinutes: 20 }, guestName: "Guest", guestEmail: "guest@example.com", notes: "" })
 model BookingConfirmation {
+  @doc("Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage.")
+  @pattern("^[0-9a-f]{64}$")
+  attemptToken?: string;
   @doc("Exact selected start instant.") startsAt: utcDateTime;
   @doc("Details the guest reviewed.") meetingType: ReviewedMeeting;
   @doc("Guest name, trimmed to 1–100 characters.") guestName: string;
@@ -485,7 +488,7 @@ model GuestErrors {
 @doc("A rejected confirmation. occupied and invalid_interval require refreshed availability and a cleared time, retaining the date and guest draft without substitution. details_changed requires current name, description and duration to be displayed and a fresh explicit confirmation; never automatically resubmit.")
 @example(#{ code: "occupied", message: "This time is no longer available. Please choose another time." })
 model BookingError {
-  @doc("Machine-readable reason.") code: "validation" | "details_changed" | "invalid_interval" | "occupied";
+  @doc("Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay.") code: "validation" | "details_changed" | "invalid_interval" | "occupied" | "attempt_deleted";
   @doc("English explanation.") message: string;
   @doc("Field errors for invalid guest data.") errors?: GuestErrors;
 }
@@ -495,7 +498,7 @@ model BookingError {
 @tag("Bookings")
 @operationId("confirmBooking")
 @summary("Explicitly confirm a meeting")
-@doc("Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. Returns a private creation response with no public read endpoint. All responses are no-store.")
+@doc("Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. Permanently deleted attempts return attempt_deleted without personal data or recreation. No public read endpoint or guest-information lookup. All responses are no-store.")
 op confirmBooking(
   @doc("Current published address.") @path slug: string,
   @doc("Reviewed meeting, selected instant and guest details.") @body confirmation: BookingConfirmation,

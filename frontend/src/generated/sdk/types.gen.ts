@@ -216,6 +216,10 @@ export type Booking = {
  */
 export type BookingConfirmation = {
     /**
+     * Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage.
+     */
+    attemptToken?: string;
+    /**
      * Exact selected start instant.
      */
     startsAt: string;
@@ -243,9 +247,9 @@ export type BookingConfirmation = {
  */
 export type BookingError = {
     /**
-     * Machine-readable reason.
+     * Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay.
      */
-    code: 'validation' | 'details_changed' | 'invalid_interval' | 'occupied';
+    code: 'validation' | 'details_changed' | 'invalid_interval' | 'occupied' | 'attempt_deleted';
     /**
      * English explanation.
      */

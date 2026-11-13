@@ -190,6 +190,8 @@ class Smoke
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("guest-draft", "node", "e2e/guest-draft.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("booking-retry", "node", "e2e/booking-retry.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("booking-history-empty-fixtures", "bundle", "exec", "rails", "runner", File.join(ROOT, "test/booking_history_fixtures.rb"),
       directory: backend, env: { "HISTORY_EMPTY" => "1" })
     puts command("booking-history-empty", "node", "e2e/booking-history.mjs",
