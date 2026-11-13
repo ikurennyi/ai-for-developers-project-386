@@ -92,6 +92,16 @@ async function confirmMeeting(): Promise<Booking> {
 }
 void confirmMeeting;
 
+async function deleteBooking(id: string) {
+  const { deleteAdminBooking } = await import('./sdk');
+  await deleteAdminBooking({
+    path: { id },
+    headers: { 'X-Calendar-Request': '1' },
+    throwOnError: true,
+  });
+}
+void deleteBooking;
+
 async function readBookingHistory() {
   const { listAdminBookings } = await import('./sdk');
   const response = await listAdminBookings({ query: { period: 'past', page: 2 }, throwOnError: true });

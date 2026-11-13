@@ -454,6 +454,26 @@ op listAdminBookings(
   @body body: AuthError;
 };
 
+@delete
+@route("/admin/bookings/{id}")
+@tag("Administrator bookings")
+@useAuth(AdminCookie)
+@operationId("deleteAdminBooking")
+@summary("Permanently delete a booking")
+@doc("Requires explicit administrator confirmation and same-origin protection. Atomically removes the booking and its shared occupancy; failures change neither. No trash, restoration or cancellation status. Freed time remains subject to schedule, current time, window and other occupancy.")
+op deleteAdminBooking(
+  @doc("Saved booking identifier.") @path id: string,
+  @doc("Required mutation protection header.") @header("X-Calendar-Request") calendarRequest: "1"
+): {
+  @statusCode statusCode: 204;
+} | Unauthenticated | Forbidden | {
+  @statusCode statusCode: 404;
+  @body body: AuthError;
+} | {
+  @statusCode statusCode: 503;
+  @body body: AuthError;
+};
+
 @doc("English field validation messages; absent keys have no error.")
 @example(#{ guestName: "Enter your name (1–100 characters)." })
 model GuestErrors {
