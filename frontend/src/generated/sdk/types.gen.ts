@@ -15,6 +15,44 @@ export type Health = {
     [key: string]: unknown;
 };
 
+/**
+ * A published offer available for guest booking.
+ */
+export type MeetingType = {
+    /**
+     * Immutable system-assigned identifier.
+     */
+    id: string;
+    /**
+     * Meeting name.
+     */
+    name: string;
+    /**
+     * Optional meeting description; empty when not supplied.
+     */
+    description: string;
+    /**
+     * Meeting duration in whole minutes.
+     */
+    durationMinutes: number;
+    /**
+     * Current unique public address segment.
+     */
+    slug: string;
+    [key: string]: unknown;
+};
+
+/**
+ * The available public meeting offers.
+ */
+export type MeetingTypeList = {
+    /**
+     * Published offers, or an empty array when none are available.
+     */
+    meetingTypes: Array<MeetingType>;
+    [key: string]: unknown;
+};
+
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -30,3 +68,19 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type ListMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/meeting-types';
+};
+
+export type ListMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: MeetingTypeList;
+};
+
+export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];
