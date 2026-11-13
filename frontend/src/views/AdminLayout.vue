@@ -50,7 +50,7 @@ onUnmounted(() => {
       <button data-test="logout" :disabled="pending" @click="logout">Log out</button>
     </header>
     <p v-if="error" role="alert">{{ error }}</p>
-    <main><RouterView /></main>
+    <main><RouterView :key="$route.path" /></main>
   </div>
 </template>
 

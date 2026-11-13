@@ -11,6 +11,7 @@ import MeetingTypesView from '../views/MeetingTypesView.vue'
 import CalendarView from '../views/CalendarView.vue'
 import { persistGuestState } from '../guest/state'
 import BookingConfirmationView from '../views/BookingConfirmationView.vue'
+import { adminFormNavigated } from '../admin/formRecovery'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,8 +55,11 @@ router.beforeEach(async (to) => {
   return { name: 'admin-login', query: { returnTo: to.fullPath } }
 })
 
-router.afterEach((_to, _from, failure) => {
-  if (!failure) persistGuestState()
+router.afterEach((to, _from, failure) => {
+  if (!failure) {
+    persistGuestState()
+    adminFormNavigated(to.path, to.query.returnTo)
+  }
 })
 
 export default router
