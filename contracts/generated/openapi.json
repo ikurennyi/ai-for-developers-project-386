@@ -104,6 +104,89 @@
         ]
       }
     },
+    "/admin/bookings/{id}": {
+      "delete": {
+        "operationId": "deleteAdminBooking",
+        "summary": "Permanently delete a booking",
+        "description": "Requires explicit administrator confirmation and same-origin protection. Atomically removes the booking and its shared occupancy; failures change neither. No trash, restoration or cancellation status. Freed time remains subject to schedule, current time, window and other occupancy.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Saved booking identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. "
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator bookings"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/admin/home": {
       "get": {
         "operationId": "getAdminHome",

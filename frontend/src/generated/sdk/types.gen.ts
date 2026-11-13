@@ -503,6 +503,54 @@ export type ListAdminBookingsResponses = {
 
 export type ListAdminBookingsResponse = ListAdminBookingsResponses[keyof ListAdminBookingsResponses];
 
+export type DeleteAdminBookingData = {
+    body?: never;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path: {
+        /**
+         * Saved booking identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/bookings/{id}';
+};
+
+export type DeleteAdminBookingErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: AuthError;
+    /**
+     * Service unavailable.
+     */
+    503: AuthError;
+};
+
+export type DeleteAdminBookingError = DeleteAdminBookingErrors[keyof DeleteAdminBookingErrors];
+
+export type DeleteAdminBookingResponses = {
+    /**
+     * There is no content to send for this request, but the headers may be useful.
+     */
+    204: void;
+};
+
+export type DeleteAdminBookingResponse = DeleteAdminBookingResponses[keyof DeleteAdminBookingResponses];
+
 export type GetAdminHomeData = {
     body?: never;
     path?: never;

@@ -73,11 +73,60 @@ try {
       downloadThroughput: -1,
       uploadThroughput: -1,
     })
+    await rows.first().getByRole('button', { name: 'Delete booking', exact: true }).click()
+    const confirmation = page.getByRole('dialog', { name: 'Delete booking?' })
+    await confirmation.waitFor()
+    assert.match(await confirmation.innerText(), /Past 00/)
+    assert.match(await confirmation.innerText(), /<b>History guest<\/b>/)
+    assert.match(await confirmation.innerText(), /Europe\/Berlin/)
+    await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click()
+    assert.equal(await rows.count(), 20)
+    await rows.first().getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await context.setOffline(true)
+    await confirmation.getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await confirmation.getByRole('alert').waitFor()
+    assert.match(await rows.first().innerText(), /Past 00/)
+    await context.setOffline(false)
+    await confirmation.getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await page.getByText('Page 1 of 2 · 22 bookings', { exact: true }).waitFor()
+    assert.match(await rows.first().innerText(), /Past 01/)
+    await page.getByRole('button', { name: 'Next page', exact: true }).click()
+    for (const total of [21, 20]) {
+      await rows.first().getByRole('button', { name: 'Delete booking', exact: true }).click()
+      await confirmation.getByRole('button', { name: 'Delete booking', exact: true }).click()
+      await page
+        .getByText(`Page ${total === 20 ? 1 : 2} of ${total === 20 ? 1 : 2} · ${total} bookings`, {
+          exact: true,
+        })
+        .waitFor()
+    }
     await page.setViewportSize({ width: 375, height: 812 })
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
       true,
     )
+    await page.getByRole('button', { name: 'Upcoming', exact: true }).click()
+    await page.getByText('Page 1 of 2 · 23 bookings', { exact: true }).waitFor()
+    await rows.first().getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await confirmation.getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await page.getByText('Page 1 of 2 · 22 bookings', { exact: true }).waitFor()
+    const upcomingResponse = await context.request.get(`${origin}/api/v1/admin/bookings`)
+    const upcoming = (await upcomingResponse.json()).bookings
+    const secondPage = await context.request.get(`${origin}/api/v1/admin/bookings?page=2`)
+    upcoming.push(...(await secondPage.json()).bookings)
+    for (const booking of upcoming.slice(1)) {
+      const result = await context.request.delete(`${origin}/api/v1/admin/bookings/${booking.id}`, {
+        headers: { 'X-Calendar-Request': '1' },
+      })
+      assert.equal(result.status(), 204)
+    }
+    await page.reload()
+    await page.getByText('Page 1 of 1 · 1 bookings', { exact: true }).waitFor()
+    await rows.first().getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await confirmation.getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await page.getByText('No upcoming bookings.', { exact: true }).waitFor()
+    await page.reload()
+    await page.getByText('No upcoming bookings.', { exact: true }).waitFor()
   }
   await page.getByRole('button', { name: 'Log out', exact: true }).click()
   await page.getByRole('heading', { name: 'Administrator login', exact: true }).waitFor()

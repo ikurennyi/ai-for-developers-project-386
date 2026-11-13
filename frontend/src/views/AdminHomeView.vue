@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAdminHome, type AdminHomeDay } from '../generated/sdk'
 import { requireAdminLogin } from '../admin/session'
+import DeleteBooking from '../components/DeleteBooking.vue'
 
 const router = useRouter()
 const days = ref<AdminHomeDay[]>([])
@@ -61,6 +62,7 @@ onMounted(load)
         <p>{{ booking.guestName }}</p>
         <p>{{ booking.guestEmail }}</p>
         <p class="notes">{{ booking.notes }}</p>
+        <DeleteBooking :booking="booking" @deleted="load" />
       </article>
     </section>
   </section>
