@@ -157,6 +157,17 @@ external GitHub Actions, a public deployment, or completion of parent #22.
   passed the same complete Docker acceptance on port 8469, project
   `calendar-5040a62755f0bfe7e22a`; stopped data/configuration are retained in
   `.services/docker-clean-abd4550c0a84`.
+- Final pre-handoff integration baseline:
+  `8e095eec02fbca7e007a8e133045f2ea90a6142d`. Clean delivery commit `92af545`
+  includes safe booking retry (`booking_attempts` and consumed-attempt
+  tombstones), conflict recovery, permanent deletion and administrator form
+  recovery boundaries. It built/migrated from empty storage and passed the
+  complete acceptance on port 8470, project `calendar-6fb204a9c45ecdea3eb2`.
+  This includes actual HTTP overlap rejection after restart/recreation and
+  full-stack stop/start, not just an unavailable display. HTTPS readiness is
+  health-checked before startup returns. All its services are stopped; its
+  private export and persistent storage remain at
+  `.services/docker-clean-7856fd688da9`.
 - The earliest pre-hardening test stack had inherited a caller database password
   before private-file precedence was added. A later full restart exposed that
   mismatch. Only that dedicated database's role password was reconciled with its
@@ -177,7 +188,10 @@ external GitHub Actions, a public deployment, or completion of parent #22.
   gates, 90 PostgreSQL RSpec examples, jsdom, real Chromium/application smoke and
   production build; a repeat passed unchanged. After merging `811482c`, the
   aggregate passed again with 91 RSpec examples and administrator form-recovery
-  browser acceptance. Existing npm pins still report 13 moderate frontend
+  browser acceptance. Final baseline `8e095ee` passed the entire aggregate with
+  **102 PostgreSQL RSpec examples, 0 failures**, all Chromium/application scenarios
+  (including retry and recovery), and the production build.
+  Existing npm pins still report 13 moderate frontend
   advisories; no dependency upgrade or audit-fix was performed.
 - External GitHub Actions/Hexlet, public deployment and parent-spec completion
   remain unconfirmed. The protected Hexlet workflow was not changed.
