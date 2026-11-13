@@ -1,5 +1,6 @@
 class CalendarAvailability
   ZONE = ActiveSupport::TimeZone["Europe/Berlin"]
+  Interval = Data.define(:starts_at, :ends_at, :available)
 
   def initialize(meeting_type, now: Time.current)
     @meeting_type = meeting_type
@@ -22,23 +23,38 @@ class CalendarAvailability
     }
   end
 
+  def interval_at(starts_at)
+    return unless starts_at
+    date = starts_at.in_time_zone(ZONE).to_date
+    return unless (@today..@today + 13).cover?(date) && !date.saturday? && !date.sunday?
+    opening = ZONE.local(date.year, date.month, date.day, 9)
+    offset = starts_at - opening
+    return unless offset >= 0 && offset <= (540 - @meeting_type.duration_minutes).minutes && (offset % 15.minutes).zero?
+    interval(starts_at)
+  end
+
   private
 
   def day(date)
     working = !date.saturday? && !date.sunday?
     {
       date: date.iso8601, workingDay: working,
-      intervals: working ? intervals(date) : []
+      intervals: working ? intervals(date).map { |entry|
+        { startsAt: entry.starts_at.utc.iso8601, endsAt: entry.ends_at.utc.iso8601, available: entry.available }
+      } : []
     }
   end
 
   def intervals(date)
     opening = ZONE.local(date.year, date.month, date.day, 9)
     (0..(540 - @meeting_type.duration_minutes)).step(15).map do |minutes|
-      starts_at = opening + minutes.minutes
-      ends_at = starts_at + @meeting_type.duration_minutes.minutes
-      free = @occupied.none? { |first, last| first < ends_at && starts_at < last }
-      { startsAt: starts_at.utc.iso8601, endsAt: ends_at.utc.iso8601, available: starts_at > @now && free }
+      interval(opening + minutes.minutes)
     end
+  end
+
+  def interval(starts_at)
+    ends_at = starts_at + @meeting_type.duration_minutes.minutes
+    free = @occupied.none? { |first, last| first < ends_at && starts_at < last }
+    Interval.new(starts_at, ends_at, starts_at > @now && free)
   end
 end

@@ -1,9 +1,10 @@
 # Reproducible Docker application (#36)
 
 This is a loopback-only, single-origin HTTPS installation, not a public
-deployment. Docker Engine and the Docker CLI/Compose plugin are required.
+deployment. Docker Engine, Docker CLI and standalone `docker-compose` are required.
 The helper is Ruby standard library only. Use the pinned mise toolchain from
-README, or Ruby 3.4.12 and Docker Compose 5.7.0 directly. Application dependencies
+README, or Ruby 3.4.12 and standalone Docker Compose 5.7.0 directly.
+The `docker compose` Desktop plugin is not the pinned project interface. Application dependencies
 are installed inside the image from the independent backend/frontend lockfiles;
 host npm installs, contracts generation and a local development configuration
 are **not** needed to build or start it.

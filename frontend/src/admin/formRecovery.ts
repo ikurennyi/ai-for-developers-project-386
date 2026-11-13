@@ -1,3 +1,5 @@
+import { tabHistory } from '../tabHistory'
+
 export interface AdminFormDraft {
   name: string
   description: string
@@ -13,19 +15,12 @@ interface RecoveryState {
 
 // History belongs to this tab; unlike sessionStorage its contents are not
 // cloned into an opener's new tab. The storage marker contains no form data.
-const saved = window.history.state?.calendarAdminForm as RecoveryState | undefined
-const state: RecoveryState =
-  saved && sessionStorage.getItem(`calendar-admin-form:${saved.id}`) === String(saved.generation)
-    ? saved
-    : { id: crypto.randomUUID(), generation: 0 }
-
-export function persistAdminForm() {
-  sessionStorage.setItem(`calendar-admin-form:${state.id}`, String(state.generation))
-  window.history.replaceState(
-    { ...window.history.state, calendarAdminForm: JSON.parse(JSON.stringify(state)) },
-    '',
-  )
-}
+const { state, persist: persistAdminForm } = tabHistory<RecoveryState>(
+  'calendarAdminForm',
+  'calendar-admin-form',
+  () => ({ id: crypto.randomUUID(), generation: 0 }),
+)
+export { persistAdminForm }
 
 export function recoverAdminForm(path: string): AdminFormDraft | undefined {
   return state.draft?.path === path ? { ...state.draft.fields } : undefined
