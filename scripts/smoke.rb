@@ -182,6 +182,8 @@ class Smoke
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("create-meeting-type", "node", "e2e/create-meeting-type.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("home-fixtures", "bundle", "exec", "rails", "runner", File.join(ROOT, "test/fixtures/admin_home.rb"),
+      directory: backend)
     puts command("manage-meeting-types", "node", "e2e/manage-meeting-types.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("calendar-navigation", "node", "e2e/calendar-navigation.mjs",
@@ -189,6 +191,14 @@ class Smoke
     puts command("guest-draft", "node", "e2e/guest-draft.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("booking-retry", "node", "e2e/booking-retry.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("booking-history-empty-fixtures", "bundle", "exec", "rails", "runner", File.join(ROOT, "test/booking_history_fixtures.rb"),
+      directory: backend, env: { "HISTORY_EMPTY" => "1" })
+    puts command("booking-history-empty", "node", "e2e/booking-history.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}", "HISTORY_EMPTY" => "1" })
+    puts command("booking-history-fixtures", "bundle", "exec", "rails", "runner", File.join(ROOT, "test/booking_history_fixtures.rb"),
+      directory: backend)
+    puts command("booking-history", "node", "e2e/booking-history.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     # A fresh application process must read the same persisted offers.
     offers_url = URI("http://127.0.0.1:#{backend_port}/api/v1/meeting-types")

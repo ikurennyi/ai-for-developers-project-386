@@ -91,3 +91,13 @@ async function confirmMeeting(): Promise<Booking> {
   return response.data;
 }
 void confirmMeeting;
+
+async function readBookingHistory() {
+  const { listAdminBookings } = await import('./sdk');
+  const response = await listAdminBookings({ query: { period: 'past', page: 2 }, throwOnError: true });
+  const bookings: Booking[] = response.data.bookings;
+  const pageSize: 20 = response.data.pageSize;
+  const total: number = response.data.total;
+  return { bookings, pageSize, total };
+}
+void readBookingHistory;

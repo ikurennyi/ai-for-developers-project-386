@@ -5,6 +5,59 @@ export type ClientOptions = {
 };
 
 /**
+ * One page of retained administrator booking snapshots.
+ */
+export type AdminBookingPage = {
+    /**
+     * Saved meeting and guest details in the requested order.
+     */
+    bookings: Array<Booking>;
+    /**
+     * Requested one-based page.
+     */
+    page: number;
+    /**
+     * Fixed maximum records per page.
+     */
+    pageSize: 20;
+    /**
+     * Total matching records, not limited by the creation window.
+     */
+    total: number;
+    [key: string]: unknown;
+};
+
+/**
+ * All ongoing and future bookings, without a creation-window limit or pagination.
+ */
+export type AdminHome = {
+    /**
+     * Fixed display zone.
+     */
+    timeZone: 'Europe/Berlin';
+    /**
+     * Berlin days ascending; empty when no booking has an end strictly after server now.
+     */
+    days: Array<AdminHomeDay>;
+    [key: string]: unknown;
+};
+
+/**
+ * Unfinished bookings sharing a start date in Europe/Berlin.
+ */
+export type AdminHomeDay = {
+    /**
+     * Berlin start date.
+     */
+    date: string;
+    /**
+     * Saved bookings ordered by start ascending, then identifier.
+     */
+    bookings: Array<Booking>;
+    [key: string]: unknown;
+};
+
+/**
  * An administrator-visible offer, including hidden drafts.
  */
 export type AdminMeetingType = {
@@ -108,7 +161,7 @@ export type Availability = {
 };
 
 /**
- * A persisted confirmation returned only to its creating request; there is no public booking lookup.
+ * A persisted snapshot returned to its creating request or the authenticated administrator; there is no public booking lookup.
  */
 export type Booking = {
     /**
@@ -415,6 +468,69 @@ export type ReviewedMeeting = {
     durationMinutes: number;
     [key: string]: unknown;
 };
+
+export type ListAdminBookingsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Defaults to Upcoming.
+         */
+        period?: 'upcoming' | 'past';
+        /**
+         * One-based page; defaults to 1. Beyond the last page returns an empty array.
+         */
+        page?: number;
+    };
+    url: '/admin/bookings';
+};
+
+export type ListAdminBookingsErrors = {
+    /**
+     * The server could not understand the request due to invalid syntax.
+     */
+    400: AuthError;
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type ListAdminBookingsError = ListAdminBookingsErrors[keyof ListAdminBookingsErrors];
+
+export type ListAdminBookingsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminBookingPage;
+};
+
+export type ListAdminBookingsResponse = ListAdminBookingsResponses[keyof ListAdminBookingsResponses];
+
+export type GetAdminHomeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/home';
+};
+
+export type GetAdminHomeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type GetAdminHomeError = GetAdminHomeErrors[keyof GetAdminHomeErrors];
+
+export type GetAdminHomeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminHome;
+};
+
+export type GetAdminHomeResponse = GetAdminHomeResponses[keyof GetAdminHomeResponses];
 
 export type ListAdminMeetingTypesData = {
     body?: never;
