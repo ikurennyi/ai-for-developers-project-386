@@ -114,6 +114,11 @@ onBeforeRouteUpdate((to) => {
 function beforeUnload(event: BeforeUnloadEvent) {
   if (dirty.value && !saved) event.preventDefault()
 }
+function documentDeparted() {
+  // beforeunload can be canceled. Only invalidate a recovered draft once the
+  // document actually leaves, otherwise canceling the native warning loses it.
+  discardAdminForm()
+}
 async function load() {
   loading.value = true
   loadError.value = ''
@@ -140,8 +145,12 @@ onMounted(async () => {
   const stored = recoverAdminForm(formPath)
   if (stored) Object.assign(form, stored)
   window.addEventListener('beforeunload', beforeUnload)
+  window.addEventListener('pagehide', documentDeparted)
 })
-onUnmounted(() => window.removeEventListener('beforeunload', beforeUnload))
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', beforeUnload)
+  window.removeEventListener('pagehide', documentDeparted)
+})
 </script>
 
 <template>

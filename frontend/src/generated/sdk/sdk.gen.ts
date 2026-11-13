@@ -218,7 +218,7 @@ export const getAvailability = <ThrowOnError extends boolean = false>(options: O
 /**
  * Explicitly confirm a meeting
  *
- * Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. Returns a private creation response with no public read endpoint. All responses are no-store.
+ * Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. Permanently deleted attempts return attempt_deleted without personal data or recreation. No public read endpoint or guest-information lookup. All responses are no-store.
  */
 export const confirmBooking = <ThrowOnError extends boolean = false>(options: Options<ConfirmBookingData, ThrowOnError>): RequestResult<ConfirmBookingResponses, ConfirmBookingErrors, ThrowOnError> => (options.client ?? client).post<ConfirmBookingResponses, ConfirmBookingErrors, ThrowOnError>({
     url: '/meeting-types/{slug}/bookings',

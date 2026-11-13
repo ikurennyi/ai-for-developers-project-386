@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getAvailability, type Availability } from '../generated/sdk'
 import GuestBookingForm from './GuestBookingForm.vue'
+import { pendingBookingAttempt } from '../guest/state'
 
 const route = useRoute()
 const router = useRouter()
@@ -103,6 +104,14 @@ async function load() {
   try {
     const { data, response } = await getAvailability({ path: { slug } })
     if (id !== requestId) return
+    const attempt = isForm.value && pendingBookingAttempt(slug, start.value)
+    if (attempt) {
+      // Availability may now include our own committed booking. Only this
+      // tab's unresolved capability can recover it, with explicit confirmation.
+      calendar.value = attempt.calendar
+      month.value = date.value.slice(0, 7)
+      return
+    }
     if (response?.status === 404) {
       unavailable.value = true
       calendar.value = undefined
