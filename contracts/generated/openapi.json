@@ -226,6 +226,49 @@
           "Meeting types"
         ]
       }
+    },
+    "/meeting-types/{slug}/availability": {
+      "get": {
+        "operationId": "getAvailability",
+        "summary": "Get a public meeting calendar",
+        "description": "Return fourteen Berlin dates with advisory shared availability. Reading never creates a booking or reserves an interval.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Current public address segment.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Availability"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingTypeUnavailable"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Meeting types"
+        ]
+      }
     }
   },
   "components": {
@@ -276,6 +319,179 @@
         "description": "An English API error without credentials or private data.",
         "example": {
           "message": "Authentication required"
+        }
+      },
+      "Availability": {
+        "type": "object",
+        "required": [
+          "meetingType",
+          "hostName",
+          "timeZone",
+          "serverNow",
+          "today",
+          "windowEnd",
+          "days"
+        ],
+        "properties": {
+          "meetingType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeetingType"
+              }
+            ],
+            "description": "The current published offer.",
+            "example": {
+              "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+              "name": "Discussion",
+              "description": "",
+              "durationMinutes": 20,
+              "slug": "discussion"
+            }
+          },
+          "hostName": {
+            "type": "string",
+            "description": "Predetermined public host name, never an email address.",
+            "example": "Alex Morgan"
+          },
+          "timeZone": {
+            "type": "string",
+            "enum": [
+              "Europe/Berlin"
+            ],
+            "description": "The fixed schedule and display time zone.",
+            "example": "Europe/Berlin"
+          },
+          "serverNow": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server instant used to calculate this snapshot.",
+            "example": "2026-11-13T13:07:00Z"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "description": "Today's Berlin date.",
+            "example": "2026-11-13"
+          },
+          "windowEnd": {
+            "type": "string",
+            "format": "date",
+            "description": "Inclusive last Berlin date: today plus thirteen calendar dates.",
+            "example": "2026-11-26"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarDay"
+            },
+            "description": "All fourteen dates, including weekends.",
+            "example": [
+              {
+                "date": "2026-11-14",
+                "workingDay": false,
+                "intervals": []
+              }
+            ]
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Public calendar snapshot calculated using server time, without guest or occupancy details.",
+        "example": {
+          "meetingType": {
+            "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+            "name": "Discussion",
+            "description": "",
+            "durationMinutes": 20,
+            "slug": "discussion"
+          },
+          "hostName": "Alex Morgan",
+          "timeZone": "Europe/Berlin",
+          "serverNow": "2026-11-13T13:07:00Z",
+          "today": "2026-11-13",
+          "windowEnd": "2026-11-26",
+          "days": [
+            {
+              "date": "2026-11-13",
+              "workingDay": true,
+              "intervals": [
+                {
+                  "startsAt": "2026-11-13T13:15:00Z",
+                  "endsAt": "2026-11-13T13:35:00Z",
+                  "available": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "CalendarDay": {
+        "type": "object",
+        "required": [
+          "date",
+          "workingDay",
+          "intervals"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO local date in Europe/Berlin."
+          },
+          "workingDay": {
+            "type": "boolean",
+            "description": "Monday through Friday; weekends still count toward the window."
+          },
+          "intervals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarInterval"
+            },
+            "description": "Schedule-valid intervals, empty on weekends."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A Berlin calendar date in the booking window.",
+        "example": {
+          "date": "2026-11-14",
+          "workingDay": false,
+          "intervals": []
+        }
+      },
+      "CalendarInterval": {
+        "type": "object",
+        "required": [
+          "startsAt",
+          "endsAt",
+          "available"
+        ],
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact start instant on the Berlin quarter-hour grid."
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact end instant, including the full meeting duration."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "True only for future intervals without shared occupancy."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A schedule-valid interval. Availability is advisory and never reserves time.",
+        "example": {
+          "startsAt": "2026-11-13T13:15:00Z",
+          "endsAt": "2026-11-13T13:35:00Z",
+          "available": true
         }
       },
       "Credentials": {
@@ -394,6 +610,28 @@
         "description": "The available public meeting offers.",
         "example": {
           "meetingTypes": []
+        }
+      },
+      "MeetingTypeUnavailable": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "enum": [
+              "Meeting type unavailable"
+            ],
+            "description": "Safe public explanation."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Indistinguishable response for hidden and nonexistent meeting types.",
+        "example": {
+          "message": "Meeting type unavailable"
         }
       }
     },
