@@ -17,6 +17,9 @@
 - Use Conventional Commits (`feat: add ...`), `<type>/<kebab-case>` branches and
   Conventional Commit PR titles. Preserve existing history; merge integration
   before handoff. Push/PR require separate permission.
+- End every implementation commit subject with the issue it addresses, in
+  GitHub-linkable form: `feat: add available-slot booking (#12)`. Use the relevant
+  issue number on each implementation commit in a multi-commit change.
 - Preserve `.github/workflows/hexlet-check.yml` unchanged: no edit, rename or
   deletion. Hexlet checks run on pushes with `HEXLET_ID`; availability depends
   on completing project steps, not local test discovery.
