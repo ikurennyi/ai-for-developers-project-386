@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 
 const browser = await chromium.launch({ headless: true })
@@ -107,9 +109,36 @@ try {
     )
     await page.getByRole('button', { name: 'Upcoming', exact: true }).click()
     await page.getByText('Page 1 of 2 · 23 bookings', { exact: true }).waitFor()
+    // Expire the real database session while the confirmation is open. No
+    // response is mocked and login must not replay this destructive request.
+    await rows.first().getByRole('button', { name: 'Delete booking', exact: true }).click()
+    execFileSync(
+      'bundle',
+      ['exec', 'rails', 'runner', 'AdminSession.update_all(expires_at: 1.second.ago)'],
+      {
+        cwd: fileURLToPath(new URL('../../backend', import.meta.url)),
+        stdio: 'pipe',
+      },
+    )
+    await confirmation.getByRole('button', { name: 'Delete booking', exact: true }).click()
+    await page.getByRole('heading', { name: 'Administrator login', exact: true }).waitFor()
+    let deletesAfterExpiry = 0
+    page.on('request', (request) => {
+      if (request.method() === 'DELETE' && request.url().includes('/admin/bookings/'))
+        deletesAfterExpiry++
+    })
+    await page.getByLabel('Username', { exact: true }).fill('owner-browser')
+    await page.getByLabel('Password', { exact: true }).fill('browser-only-password-24!')
+    await page.getByRole('button', { name: 'Log in', exact: true }).click()
+    await page.getByText('Page 1 of 2 · 23 bookings', { exact: true }).waitFor()
+    assert.equal(new URL(page.url()).pathname, '/admin/bookings')
+    assert.equal(deletesAfterExpiry, 0, 'Login must not replay Delete')
+    assert.equal(await confirmation.count(), 0, 'A new confirmation is required after login')
+    assert.match(await rows.first().innerText(), /Future 00/)
     await rows.first().getByRole('button', { name: 'Delete booking', exact: true }).click()
     await confirmation.getByRole('button', { name: 'Delete booking', exact: true }).click()
     await page.getByText('Page 1 of 2 · 22 bookings', { exact: true }).waitFor()
+    assert.equal(deletesAfterExpiry, 1)
     const upcomingResponse = await context.request.get(`${origin}/api/v1/admin/bookings`)
     const upcoming = (await upcomingResponse.json()).bookings
     const secondPage = await context.request.get(`${origin}/api/v1/admin/bookings?page=2`)
