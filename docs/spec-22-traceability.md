@@ -135,9 +135,15 @@ Earlier baseline verification is not substituted for a run of these changes.
   HTTPS **51299**, project **`calendar-a0dc4b350d18b5a75d12`**. All its services
   are stopped; private config and persistent data remain in this worktree at
   `.services/docker-clean-2a521696b8fd`.
+- Repeated the same complete clean-export Docker acceptance at **`d82187b`**,
+  including the verification-harness repairs and traceability document:
+  HTTPS **60519**, project **`calendar-3a5955b26e489cedd578`**. Passed, with all
+  services stopped and separate private configuration/persistent data retained
+  at `.services/docker-clean-ec437dc8544a`. The subsequent evidence-only
+  documentation commit changes no runtime or test code.
 - Full logs are retained in the supplied private `calendar-22-context` directory:
   `fixes-red.log`, `fixes-backend-green.log`, `fixes-check.log`,
-  `fixes-check-repeat.log`, `fixes-check-final.log`, `fixes-docker.log`,
+  `fixes-check-repeat.log`, `fixes-check-final.log`, `fixes-docker.log`, `fixes-docker-final.log`,
   `fixes-services.log`, `fixes-ci.log`, `fixes-ci-database-final.log`,
   `fixes-smoke-isolation.log`, and `fixes-browser-failure-probe.log`.
   Initial failing harness/fixture iterations remain separately recorded; their
