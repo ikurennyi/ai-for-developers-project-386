@@ -22,6 +22,40 @@
 Локальный прогон не подтверждает зелёный GitHub Actions: внешний CI и итоговый
 review пока не подтверждены, родительская спецификация не объявляется выполненной.
 
+## Публичный учебный деплой
+
+Приложение: [ai-for-developers-project-386-ddst.onrender.com](https://ai-for-developers-project-386-ddst.onrender.com).
+
+Сервис развёрнут на Render из корневого `Dockerfile`. Render автоматически
+передаёт web service переменную `PORT` (обычно `10000`); Dockerfile запускает
+Puma, а `backend/config/puma.rb` слушает `ENV["PORT"]`. `PORT` не нужно
+добавлять вручную. Для запуска вне Render задайте `PORT` сами; образ по умолчанию
+использует `3000`.
+
+Приложение использует отдельную PostgreSQL. `DATABASE_URL`, `SECRET_KEY_BASE`,
+`ADMIN_USERNAME` и `ADMIN_PASSWORD` задаются в настройках Render как переменные
+окружения/секреты.
+Бронирования и настройки хранятся в PostgreSQL, поэтому рестарт/redeploy web
+service с той же БД сам по себе данные не сбрасывает. Файловая система web
+service временная. У бесплатной Render PostgreSQL срок жизни ограничен 30 днями:
+после истечения БД её данные нельзя считать постоянными; проверьте тариф и
+срок действия БД в Render Dashboard.
+
+### Подключение Render MCP в OpenCode
+
+В проектном `opencode.json` настроен официальный удалённый Render MCP endpoint.
+Чтобы авторизоваться:
+
+1. Откройте репозиторий в OpenCode и выполните `/mcps`.
+2. Выберите `render` и завершите OAuth в браузере.
+3. Убедитесь, что сервер отображается как `connected`; при запросе действий
+   укажите нужный Render workspace.
+
+OAuth-токены хранятся OpenCode вне репозитория. Не записывайте API keys или
+токены в конфигурацию проекта. Для других MCP-клиентов добавляйте
+`https://mcp.render.com/mcp` через их настройки и используйте OAuth, если он
+поддерживается.
+
 ## Стек
 
 - Rails API / Ruby, PostgreSQL; Vue 3, Router, TypeScript и Element Plus.
