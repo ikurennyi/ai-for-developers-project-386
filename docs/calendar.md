@@ -60,7 +60,9 @@ must be added with the confirmation operation in #28.
 selection/Continue without reservation, unavailable direct links, stale form
 links, keyboard activation, phone stacking/no horizontal overflow, and occupied
 date/window empty states. Chromium's device zone is America/Los_Angeles to verify
-that the display remains Europe/Berlin. The harness repeats normal scenarios
+that the display remains Europe/Berlin. A separate full-page Chromium run in
+Pacific/Honolulu checks real navigation, calendar/form refresh, restored selection,
+desktop columns and a 320-pixel phone viewport. The harness repeats normal scenarios
 after restarting Rails and uses a separate fully occupied phase before hiding
 offers. All resources are per-run isolated.
 

@@ -99,12 +99,14 @@ RSpec.describe "Public calendar availability", type: :request do
   end
 
   it "recomputes calendar dates at Berlin midnight rather than after 336 hours" do
-    travel_to Time.iso8601("2026-11-13T22:59:59Z")
+    travel_to Time.iso8601("2026-11-30T22:59:59Z")
     get "/api/v1/meeting-types/discussion/availability"
-    expect(JSON.parse(response.body)).to include("today" => "2026-11-13", "windowEnd" => "2026-11-26")
-    travel_to Time.iso8601("2026-11-13T23:00:00Z")
+    expect(JSON.parse(response.body)).to include("today" => "2026-11-30", "windowEnd" => "2026-12-13")
+    travel_to Time.iso8601("2026-11-30T23:00:00Z")
     get "/api/v1/meeting-types/discussion/availability"
-    expect(JSON.parse(response.body)).to include("today" => "2026-11-14", "windowEnd" => "2026-11-27")
+    expect(JSON.parse(response.body)).to include("today" => "2026-12-01", "windowEnd" => "2026-12-14")
+    expect(JSON.parse(response.body).fetch("days").map { |day| day.fetch("date") })
+      .not_to include("2026-11-30", "2026-12-15")
   end
 
   [

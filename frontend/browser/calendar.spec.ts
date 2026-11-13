@@ -31,8 +31,9 @@ it.skipIf(inject('emptyMeetingTypes') || inject('occupiedCalendar'))(
         path: { slug: '15-minute-meeting' },
         throwOnError: true,
       })
-      const day = before.days.find((entry) =>
-        entry.intervals.some((interval) => interval.available),
+      const day = before.days.find(
+        (entry) =>
+          entry.date > before.today && entry.intervals.some((interval) => interval.available),
       )!
       const interval = day.intervals.find((entry) => entry.available)!
       expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe('America/Los_Angeles')
@@ -70,7 +71,7 @@ it.skipIf(inject('emptyMeetingTypes') || inject('occupiedCalendar'))(
         path: { slug: '15-minute-meeting' },
         throwOnError: true,
       })
-      expect(after.days).toEqual(before.days)
+      expect(after.days.find((entry) => entry.date === day.date)).toEqual(day)
       await wrapper.get('a.back-calendar').trigger('click')
       await expect.poll(() => wrapper.find('[aria-pressed="true"][data-start]').exists()).toBe(true)
       await wrapper.get('a.back-types').trigger('click')

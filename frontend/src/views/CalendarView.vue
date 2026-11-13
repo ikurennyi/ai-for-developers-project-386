@@ -109,7 +109,12 @@ async function load() {
     }
     if (!data) throw new Error('Calendar request failed')
     calendar.value = data
-    if (loadedSlug !== slug || !month.value) {
+    if (
+      loadedSlug !== slug ||
+      !month.value ||
+      month.value < data.today.slice(0, 7) ||
+      month.value > data.windowEnd.slice(0, 7)
+    ) {
       month.value = data.today.slice(0, 7)
       loadedSlug = slug
     }
