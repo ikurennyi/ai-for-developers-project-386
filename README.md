@@ -53,6 +53,9 @@ mise exec -- node frontend/node_modules/playwright/cli.js install --with-deps ch
 
 ## Использование
 
+Для запуска приложения целиком в контейнерах из чистого checkout, с HTTPS,
+миграциями и постоянной БД: [Docker application](docs/docker.md).
+
 Для каждого checkout/worktree создайте отдельную игнорируемую конфигурацию.
 Не перезаписывайте существующий `mise.local.toml`: шаблон меняет пароль.
 
