@@ -97,6 +97,15 @@ try {
     const availability = await get(`/api/v1/meeting-types/${other.slug}/availability`)
     const occupied = availability.days.flatMap((entry) => entry.intervals).find((slot) => Date.parse(slot.startsAt) === Date.parse(booking.startsAt))
     assert.equal(occupied.available, false, 'hidden original type still occupies shared calendar')
+    const overlap = await guest.request.post(`${origin}/api/v1/meeting-types/${other.slug}/bookings`, {
+      data: {
+        startsAt: booking.startsAt,
+        meetingType: { name: other.name, description: other.description, durationMinutes: other.durationMinutes },
+        guestName: 'Overlapping Docker Guest', guestEmail: 'docker-overlap@example.com',
+      },
+    })
+    assert.equal(overlap.status(), 409, 'persistent occupancy rejects a new overlapping booking')
+    assert.equal((await overlap.json()).code, 'occupied')
     assert.equal((await api.get(`${origin}/api/v1/meeting-types/${type.slug}/availability`)).status(), 404)
     assert.equal((await api.get(`${origin}/api/v1/meeting-types/${edited.slug}/availability`)).status(), 404)
     await page.reload()

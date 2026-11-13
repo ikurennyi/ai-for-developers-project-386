@@ -68,6 +68,9 @@ Types, bookings, snapshots, exact instants, occupancy, initialization identity,
 administrator password hashes and sessions live in PostgreSQL, not the app
 container filesystem. Back up PostgreSQL before upgrades; volume retention is
 not a backup. Do not run concurrent migration/start operations on one project.
+An existing PostgreSQL volume retains its database user's password. Editing
+`POSTGRES_PASSWORD` alone does not rotate it: retain the original value or
+perform an intentional database credential migration, never a volume reset.
 
 Change the password without putting it in command arguments or shell history
 (Bash; at least 12 characters):
