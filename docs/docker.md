@@ -143,6 +143,18 @@ external GitHub Actions, a public deployment, or completion of parent #22.
   Both projects were stopped, retaining their separate PostgreSQL volumes and
   private configurations. The clean export remains under
   `.services/docker-clean-8d24e7d3b73b` for inspection/restart.
+- A further clean export of `f1d2bff`, including integration `811482c`
+  (administrator form recovery), passed on port 8468 in project
+  `calendar-6413dc5e0c69af7b8c72`. This run also stopped/started **all** services
+  while deliberately injecting a different caller `POSTGRES_PASSWORD` on each
+  lifecycle command. Private configuration remained authoritative and all
+  persistence/rotation checks passed. Its stopped, retained export is
+  `.services/docker-clean-ed1b8d8bc043`.
+- The earliest pre-hardening test stack had inherited a caller database password
+  before private-file precedence was added. A later full restart exposed that
+  mismatch. Only that dedicated database's role password was reconciled with its
+  private file, preserving records; no volumes or other worktrees were modified.
+  The clean export above verifies startup/restart without that historical state.
 - HTTP assertions compare booking snapshots and exact start/end instants before
   and after restart/recreation, retain edited hidden initial types without
   duplicate seed offers, and verify occupancy through another published type.
@@ -151,9 +163,14 @@ external GitHub Actions, a public deployment, or completion of parent #22.
   device settings, with certificate bypass confined to this local test.
 - Setup CLI probes passed: invalid/occupied ports fail before writing secrets,
   generated credentials have mode 0600, and repeated setup cannot overwrite them.
+- A separate read-only, network-disabled run of the built image confirmed a
+  non-root UID and absence of Git/worktree state, local Bundler configuration,
+  host npm dependencies and Rails credential/master-key files.
 - Full `mise run check` passed: contract generation/drift/SDK typing, all static
   gates, 90 PostgreSQL RSpec examples, jsdom, real Chromium/application smoke and
-  production build. Existing npm pins still report 13 moderate frontend
+  production build; a repeat passed unchanged. After merging `811482c`, the
+  aggregate passed again with 91 RSpec examples and administrator form-recovery
+  browser acceptance. Existing npm pins still report 13 moderate frontend
   advisories; no dependency upgrade or audit-fix was performed.
 - External GitHub Actions/Hexlet, public deployment and parent-spec completion
   remain unconfirmed. The protected Hexlet workflow was not changed.
