@@ -102,7 +102,7 @@ These are not extra gates in `check`; run them when changing infrastructure:
 | `mise run check:test` | Real deliberate failures for every aggregate gate |
 | `mise run hooks:test` | Actual isolated Git hook success/failure tests |
 | `mise run commits:test` | Commit-event range fixtures |
-| `mise run ci:validate` | actionlint and application-workflow policy tests |
+| `mise run ci:validate` | actionlint and application/release-workflow configuration/policy tests |
 | `mise run commits:check` | CI commitlint range; requires real GitHub event env/history |
 | `mise run contracts:generate` | Explicitly update committed generated artifacts (writes) |
 

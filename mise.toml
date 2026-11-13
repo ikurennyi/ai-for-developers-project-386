@@ -98,8 +98,8 @@ run = "node tooling/check-commits.mjs"
 run = "ruby test/commit_ranges_test.rb"
 
 [tasks."ci:validate"]
-description = "Validate only the application workflow; never modify Hexlet"
-run = ["actionlint .github/workflows/application-check.yml", "ruby test/workflow_test.rb"]
+description = "Validate application/release workflows and policies; never modify Hexlet"
+run = ["actionlint .github/workflows/application-check.yml .github/workflows/release-please.yml", "ruby test/workflow_test.rb", "ruby test/release_config_test.rb"]
 
 [tasks."contracts:generate"]
 dir = "contracts"

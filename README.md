@@ -95,6 +95,8 @@ mise run ci:validate
 - [Chromium, изоляция и cleanup](docs/chromium-smoke.md).
 - [Hooks, commit ranges и CI](docs/hooks-and-ci.md). Установка hooks явная,
   локальная для репозитория; linked worktree могут разделять hooks.
+- [Версионирование и release PR](docs/releases.md): единая версия приложения,
+  настройка отдельного токена maintainer-ом и ещё не подтверждённые внешние шаги.
 - Коммиты: Conventional Commits, например `docs: clarify local setup`;
   ветки: `docs/short-description`, PR titles — также Conventional Commits.
 
