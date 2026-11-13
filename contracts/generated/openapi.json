@@ -8,9 +8,844 @@
   "tags": [
     {
       "name": "Health"
+    },
+    {
+      "name": "Meeting types"
+    },
+    {
+      "name": "Administrator Home"
+    },
+    {
+      "name": "Administrator bookings"
+    },
+    {
+      "name": "Bookings"
+    },
+    {
+      "name": "Administrator authentication"
+    },
+    {
+      "name": "Administrator meeting types"
     }
   ],
   "paths": {
+    "/admin/bookings": {
+      "get": {
+        "operationId": "listAdminBookings",
+        "summary": "Read upcoming bookings or retained history",
+        "description": "Private, non-cacheable snapshots. Upcoming includes ongoing meetings (end > server now), ordered by start ascending; Past uses end <= now and start descending. Equal starts use identifier order. No creation-window limit. Pages contain at most 20 bookings.",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "description": "Defaults to Upcoming.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "upcoming",
+                "past"
+              ]
+            },
+            "explode": false
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; defaults to 1. Beyond the last page returns an empty array.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBookingPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator bookings"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
+    "/admin/bookings/{id}": {
+      "delete": {
+        "operationId": "deleteAdminBooking",
+        "summary": "Permanently delete a booking",
+        "description": "Requires explicit administrator confirmation and same-origin protection. Atomically removes the booking and its shared occupancy; failures change neither. No trash, restoration or cancellation status. Freed time remains subject to schedule, current time, window and other occupancy.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Saved booking identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. "
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator bookings"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
+    "/admin/home": {
+      "get": {
+        "operationId": "getAdminHome",
+        "summary": "Read all unfinished bookings grouped by Berlin day",
+        "description": "Requires administrator access. Includes ongoing bookings and every future booking, including hidden types and dates beyond the creation window. End equal to server now is excluded. Returns saved snapshots and full plain-text guest details. Responses are no-store.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHome"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator Home"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
+    "/admin/meeting-types": {
+      "get": {
+        "operationId": "listAdminMeetingTypes",
+        "summary": "List all meeting types",
+        "description": "Requires administrator access. Includes hidden drafts and publication state; responses are not cacheable.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingTypeList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createAdminMeetingType",
+        "summary": "Create a hidden meeting type",
+        "description": "Save never publishes. Requires same-origin protection. Invalid input or an occupied address returns field errors without saving or renaming.",
+        "parameters": [
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The offer was not saved; preserve the form and correct these fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Safe English summary.",
+                      "example": "Please correct the highlighted fields."
+                    },
+                    "errors": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/MeetingTypeFieldErrors"
+                        }
+                      ],
+                      "description": "Errors beside the relevant fields.",
+                      "example": {
+                        "slug": [
+                          "has already been taken"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "errors"
+                  ],
+                  "additionalProperties": {
+                    "not": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMeetingType"
+              }
+            }
+          },
+          "description": "The administrator's explicit offer details."
+        },
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
+    "/admin/meeting-types/{id}": {
+      "get": {
+        "operationId": "getAdminMeetingType",
+        "summary": "Read meeting type details for editing",
+        "description": "Requires administrator access; hidden offers are included. Responses are not cacheable.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Immutable system-assigned identifier.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The administrative meeting type does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateAdminMeetingType",
+        "summary": "Save meeting type details without changing publication",
+        "description": "Uses creation validation. Identity is immutable. A changed address immediately releases the old address without redirecting it. Existing booking snapshots and occupancy are unchanged.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Immutable system-assigned identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The administrative meeting type does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The offer was not saved; preserve the form and correct these fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Safe English summary.",
+                      "example": "Please correct the highlighted fields."
+                    },
+                    "errors": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/MeetingTypeFieldErrors"
+                        }
+                      ],
+                      "description": "Errors beside the relevant fields.",
+                      "example": {
+                        "slug": [
+                          "has already been taken"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "errors"
+                  ],
+                  "additionalProperties": {
+                    "not": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMeetingType"
+              }
+            }
+          },
+          "description": "Complete editable details; omitted description is empty."
+        },
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
+    "/admin/meeting-types/{id}/publication": {
+      "put": {
+        "operationId": "setAdminMeetingTypePublication",
+        "summary": "Publish, hide or republish a meeting type",
+        "description": "Explicit idempotent state change, separate from Save. Hiding prevents new bookings but preserves existing snapshots and occupancy. Only successful responses confirm the new state.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Immutable system-assigned identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The administrative meeting type does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The offer was not saved; preserve the form and correct these fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Safe English summary.",
+                      "example": "Please correct the highlighted fields."
+                    },
+                    "errors": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/MeetingTypeFieldErrors"
+                        }
+                      ],
+                      "description": "Errors beside the relevant fields.",
+                      "example": {
+                        "slug": [
+                          "has already been taken"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "errors"
+                  ],
+                  "additionalProperties": {
+                    "not": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingTypePublication"
+              }
+            }
+          },
+          "description": "Explicit desired state."
+        },
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
+    "/admin/session": {
+      "post": {
+        "operationId": "loginAdmin",
+        "summary": "Log in to the single administrator account",
+        "description": "Creates a 24-hour session. Requires X-Calendar-Request: 1 and same-origin browser requests. Sets an HttpOnly cookie. Credentials errors are always generic. Ten attempts per IP per 15 minutes, shared through PostgreSQL.",
+        "parameters": [
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required custom header; cross-origin browsers must preflight and are not granted CORS access.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Ten login attempts per IP per 15-minute window have been used.",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "description": "The operator-configured username and password."
+        }
+      },
+      "get": {
+        "operationId": "getAdminSession",
+        "summary": "Read the current administrator session",
+        "description": "Requires the session cookie; never extends expiry. Responses are not cacheable.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator authentication"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "logoutAdmin",
+        "summary": "Revoke the current administrator session",
+        "description": "Immediately revokes the cookie's session. Requires X-Calendar-Request: 1; safe to repeat.",
+        "parameters": [
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required custom header protecting against cross-origin form submissions.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. "
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator authentication"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "getHealth",
@@ -33,10 +868,812 @@
           "Health"
         ]
       }
+    },
+    "/meeting-types": {
+      "get": {
+        "operationId": "listMeetingTypes",
+        "summary": "List published meeting types",
+        "description": "Return every published offer. Hidden offers are never included.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingTypeList"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Meeting types"
+        ]
+      }
+    },
+    "/meeting-types/{slug}/availability": {
+      "get": {
+        "operationId": "getAvailability",
+        "summary": "Get a public meeting calendar",
+        "description": "Return fourteen Berlin dates with advisory shared availability. Reading never creates a booking or reserves an interval.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Current public address segment.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Availability"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingTypeUnavailable"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Meeting types"
+        ]
+      }
+    },
+    "/meeting-types/{slug}/bookings": {
+      "post": {
+        "operationId": "confirmBooking",
+        "summary": "Explicitly confirm a meeting",
+        "description": "Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. With attemptToken, concurrent or later retries return the original committed booking before rechecking mutable offer/availability rules; otherwise create at most once. Permanently deleted attempts return attempt_deleted without personal data or recreation. No public read endpoint or guest-information lookup. All responses are no-store.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Current published address.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingTypeUnavailable"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Client error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Bookings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingConfirmation"
+              }
+            }
+          },
+          "description": "Reviewed meeting, selected instant and guest details."
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AdminBookingPage": {
+        "type": "object",
+        "required": [
+          "bookings",
+          "page",
+          "pageSize",
+          "total"
+        ],
+        "properties": {
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            },
+            "description": "Saved meeting and guest details in the requested order.",
+            "example": [
+              {
+                "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+                "meetingName": "Discussion",
+                "meetingDescription": "",
+                "durationMinutes": 20,
+                "hostName": "Alex Morgan",
+                "timeZone": "Europe/Berlin",
+                "startsAt": "2026-11-13T09:00:00Z",
+                "endsAt": "2026-11-13T09:20:00Z",
+                "guestName": "Guest",
+                "guestEmail": "guest@example.com",
+                "notes": ""
+              }
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Requested one-based page.",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "enum": [
+              20
+            ],
+            "description": "Fixed maximum records per page.",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "description": "Total matching records, not limited by the creation window.",
+            "example": 0
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "One page of retained administrator booking snapshots.",
+        "example": {
+          "bookings": [],
+          "page": 1,
+          "pageSize": 20,
+          "total": 0
+        }
+      },
+      "AdminHome": {
+        "type": "object",
+        "required": [
+          "timeZone",
+          "days"
+        ],
+        "properties": {
+          "timeZone": {
+            "type": "string",
+            "enum": [
+              "Europe/Berlin"
+            ],
+            "description": "Fixed display zone.",
+            "example": "Europe/Berlin"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminHomeDay"
+            },
+            "description": "Berlin days ascending; empty when no booking has an end strictly after server now.",
+            "example": []
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "All ongoing and future bookings, without a creation-window limit or pagination.",
+        "example": {
+          "timeZone": "Europe/Berlin",
+          "days": []
+        }
+      },
+      "AdminHomeDay": {
+        "type": "object",
+        "required": [
+          "date",
+          "bookings"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Berlin start date.",
+            "example": "2026-11-13"
+          },
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            },
+            "description": "Saved bookings ordered by start ascending, then identifier.",
+            "example": []
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Unfinished bookings sharing a start date in Europe/Berlin.",
+        "example": {
+          "date": "2026-11-13",
+          "bookings": []
+        }
+      },
+      "AdminMeetingType": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "durationMinutes",
+          "slug",
+          "published"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Immutable system-assigned identifier.",
+            "example": "29a71c26-c842-407d-bcd2-e93c8ea0ceab"
+          },
+          "name": {
+            "type": "string",
+            "description": "Meeting name.",
+            "example": "Short meeting"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional meeting description; empty when not supplied.",
+            "example": "A quick conversation."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 540,
+            "description": "Meeting duration in whole minutes.",
+            "example": 15
+          },
+          "slug": {
+            "type": "string",
+            "description": "Current unique public address segment.",
+            "example": "short-meeting"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "True only after a separate publication action.",
+            "example": true
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "An administrator-visible offer, including hidden drafts.",
+        "example": {
+          "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+          "name": "Planning",
+          "description": "",
+          "durationMinutes": 20,
+          "slug": "planning",
+          "published": false
+        }
+      },
+      "AdminMeetingTypeList": {
+        "type": "object",
+        "required": [
+          "meetingTypes"
+        ],
+        "properties": {
+          "meetingTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminMeetingType"
+            },
+            "description": "Published and hidden offers."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "All meeting types in creation order.",
+        "example": {
+          "meetingTypes": []
+        }
+      },
+      "AdminSession": {
+        "type": "object",
+        "required": [
+          "username",
+          "expiresAt"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Configured administrator username.",
+            "example": "owner"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Absolute session expiry, 24 hours after login.",
+            "example": "2026-11-14T10:00:00Z"
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "The single administrator's current session. Expiry never slides.",
+        "example": {
+          "username": "owner",
+          "expiresAt": "2026-11-14T10:00:00Z"
+        }
+      },
+      "AuthError": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Safe explanation of the failure.",
+            "example": "Authentication required"
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "An English API error without credentials or private data.",
+        "example": {
+          "message": "Authentication required"
+        }
+      },
+      "Availability": {
+        "type": "object",
+        "required": [
+          "meetingType",
+          "hostName",
+          "timeZone",
+          "serverNow",
+          "today",
+          "windowEnd",
+          "days"
+        ],
+        "properties": {
+          "meetingType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeetingType"
+              }
+            ],
+            "description": "The current published offer.",
+            "example": {
+              "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+              "name": "Discussion",
+              "description": "",
+              "durationMinutes": 20,
+              "slug": "discussion"
+            }
+          },
+          "hostName": {
+            "type": "string",
+            "description": "Predetermined public host name, never an email address.",
+            "example": "Alex Morgan"
+          },
+          "timeZone": {
+            "type": "string",
+            "enum": [
+              "Europe/Berlin"
+            ],
+            "description": "The fixed schedule and display time zone.",
+            "example": "Europe/Berlin"
+          },
+          "serverNow": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server instant used to calculate this snapshot.",
+            "example": "2026-11-13T13:07:00Z"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "description": "Today's Berlin date.",
+            "example": "2026-11-13"
+          },
+          "windowEnd": {
+            "type": "string",
+            "format": "date",
+            "description": "Inclusive last Berlin date: today plus thirteen calendar dates.",
+            "example": "2026-11-26"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarDay"
+            },
+            "description": "All fourteen dates, including weekends.",
+            "example": [
+              {
+                "date": "2026-11-14",
+                "workingDay": false,
+                "intervals": []
+              }
+            ]
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Public calendar snapshot calculated using server time, without guest or occupancy details.",
+        "example": {
+          "meetingType": {
+            "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+            "name": "Discussion",
+            "description": "",
+            "durationMinutes": 20,
+            "slug": "discussion"
+          },
+          "hostName": "Alex Morgan",
+          "timeZone": "Europe/Berlin",
+          "serverNow": "2026-11-13T13:07:00Z",
+          "today": "2026-11-13",
+          "windowEnd": "2026-11-26",
+          "days": [
+            {
+              "date": "2026-11-13",
+              "workingDay": true,
+              "intervals": [
+                {
+                  "startsAt": "2026-11-13T13:15:00Z",
+                  "endsAt": "2026-11-13T13:35:00Z",
+                  "available": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "required": [
+          "id",
+          "meetingName",
+          "meetingDescription",
+          "durationMinutes",
+          "hostName",
+          "timeZone",
+          "startsAt",
+          "endsAt",
+          "guestName",
+          "guestEmail",
+          "notes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System identifier, not a public access credential."
+          },
+          "meetingName": {
+            "type": "string",
+            "description": "Saved meeting name."
+          },
+          "meetingDescription": {
+            "type": "string",
+            "description": "Saved description."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Saved duration."
+          },
+          "hostName": {
+            "type": "string",
+            "description": "Fixed calendar owner."
+          },
+          "timeZone": {
+            "type": "string",
+            "enum": [
+              "Europe/Berlin"
+            ],
+            "description": "Fixed display zone."
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact saved start."
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact saved end."
+          },
+          "guestName": {
+            "type": "string",
+            "description": "Trimmed name."
+          },
+          "guestEmail": {
+            "type": "string",
+            "description": "Guest email."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Plain-text notes."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A persisted snapshot returned to its creating request or the authenticated administrator; there is no public booking lookup.",
+        "example": {
+          "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+          "meetingName": "Discussion",
+          "meetingDescription": "",
+          "durationMinutes": 20,
+          "hostName": "Alex Morgan",
+          "timeZone": "Europe/Berlin",
+          "startsAt": "2026-11-13T09:00:00Z",
+          "endsAt": "2026-11-13T09:20:00Z",
+          "guestName": "Guest",
+          "guestEmail": "guest@example.com",
+          "notes": ""
+        }
+      },
+      "BookingConfirmation": {
+        "type": "object",
+        "required": [
+          "startsAt",
+          "meetingType",
+          "guestName",
+          "guestEmail"
+        ],
+        "properties": {
+          "attemptToken": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage."
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact selected start instant."
+          },
+          "meetingType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewedMeeting"
+              }
+            ],
+            "description": "Details the guest reviewed."
+          },
+          "guestName": {
+            "type": "string",
+            "description": "Guest name, trimmed to 1–100 characters."
+          },
+          "guestEmail": {
+            "type": "string",
+            "description": "Required email, at most 254 characters."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional plain-text notes, at most 2000 characters."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "An explicit confirmation; reading availability never creates this record.",
+        "example": {
+          "startsAt": "2026-11-13T09:00:00Z",
+          "meetingType": {
+            "name": "Discussion",
+            "description": "",
+            "durationMinutes": 20
+          },
+          "guestName": "Guest",
+          "guestEmail": "guest@example.com",
+          "notes": ""
+        }
+      },
+      "BookingError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "validation",
+              "details_changed",
+              "invalid_interval",
+              "occupied",
+              "attempt_deleted"
+            ],
+            "description": "Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay."
+          },
+          "message": {
+            "type": "string",
+            "description": "English explanation."
+          },
+          "errors": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GuestErrors"
+              }
+            ],
+            "description": "Field errors for invalid guest data."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A rejected confirmation. occupied and invalid_interval require refreshed availability and a cleared time, retaining the date and guest draft without substitution. details_changed requires current name, description and duration to be displayed and a fresh explicit confirmation; never automatically resubmit.",
+        "example": {
+          "code": "occupied",
+          "message": "This time is no longer available. Please choose another time."
+        }
+      },
+      "CalendarDay": {
+        "type": "object",
+        "required": [
+          "date",
+          "workingDay",
+          "intervals"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO local date in Europe/Berlin."
+          },
+          "workingDay": {
+            "type": "boolean",
+            "description": "Monday through Friday; weekends still count toward the window."
+          },
+          "intervals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarInterval"
+            },
+            "description": "Schedule-valid intervals, empty on weekends."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A Berlin calendar date in the booking window.",
+        "example": {
+          "date": "2026-11-14",
+          "workingDay": false,
+          "intervals": []
+        }
+      },
+      "CalendarInterval": {
+        "type": "object",
+        "required": [
+          "startsAt",
+          "endsAt",
+          "available"
+        ],
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact start instant on the Berlin quarter-hour grid."
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact end instant, including the full meeting duration."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "True only for future intervals without shared occupancy."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A schedule-valid interval. Availability is advisory and never reserves time.",
+        "example": {
+          "startsAt": "2026-11-13T13:15:00Z",
+          "endsAt": "2026-11-13T13:35:00Z",
+          "available": true
+        }
+      },
+      "Credentials": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Administrator username.",
+            "example": "owner"
+          },
+          "password": {
+            "type": "string",
+            "description": "Administrator password.",
+            "example": "example-not-a-default-password"
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Initial credentials are configured by the operator, not public defaults.",
+        "example": {
+          "username": "owner",
+          "password": "example-not-a-default-password"
+        }
+      },
+      "GuestErrors": {
+        "type": "object",
+        "properties": {
+          "guestName": {
+            "type": "string",
+            "description": "Name error."
+          },
+          "guestEmail": {
+            "type": "string",
+            "description": "Email error."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes error."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "English field validation messages; absent keys have no error.",
+        "example": {
+          "guestName": "Enter your name (1–100 characters)."
+        }
+      },
       "Health": {
         "type": "object",
         "required": [
@@ -59,6 +1696,248 @@
         "example": {
           "status": "ok"
         }
+      },
+      "MeetingType": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "durationMinutes",
+          "slug"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Immutable system-assigned identifier.",
+            "example": "29a71c26-c842-407d-bcd2-e93c8ea0ceab"
+          },
+          "name": {
+            "type": "string",
+            "description": "Meeting name.",
+            "example": "Short meeting"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional meeting description; empty when not supplied.",
+            "example": "A quick conversation."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 540,
+            "description": "Meeting duration in whole minutes.",
+            "example": 15
+          },
+          "slug": {
+            "type": "string",
+            "description": "Current unique public address segment.",
+            "example": "short-meeting"
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A published offer available for guest booking.",
+        "example": {
+          "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+          "name": "Short meeting",
+          "description": "A quick conversation.",
+          "durationMinutes": 15,
+          "slug": "short-meeting"
+        }
+      },
+      "MeetingTypeFieldErrors": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Name errors."
+          },
+          "description": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Description errors."
+          },
+          "durationMinutes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Duration errors."
+          },
+          "slug": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Address errors, including concurrent collisions."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "English errors keyed by the form's field names.",
+        "example": {
+          "name": [
+            "can't be blank"
+          ],
+          "description": [
+            "is too long (maximum is 2000 characters)"
+          ],
+          "durationMinutes": [
+            "must be a whole number from 1 to 540"
+          ],
+          "slug": [
+            "has already been taken"
+          ]
+        }
+      },
+      "MeetingTypeList": {
+        "type": "object",
+        "required": [
+          "meetingTypes"
+        ],
+        "properties": {
+          "meetingTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingType"
+            },
+            "description": "Published offers, or an empty array when none are available."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "The available public meeting offers.",
+        "example": {
+          "meetingTypes": []
+        }
+      },
+      "MeetingTypePublication": {
+        "type": "object",
+        "required": [
+          "published"
+        ],
+        "properties": {
+          "published": {
+            "type": "boolean",
+            "description": "Publish for new bookings, or hide without changing existing bookings or occupancy."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Explicit desired publication state; saving details never changes this state.",
+        "example": {
+          "published": true
+        }
+      },
+      "MeetingTypeUnavailable": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "enum": [
+              "Meeting type unavailable"
+            ],
+            "description": "Safe public explanation."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Indistinguishable response for hidden and nonexistent meeting types.",
+        "example": {
+          "message": "Meeting type unavailable"
+        }
+      },
+      "NewMeetingType": {
+        "type": "object",
+        "required": [
+          "name",
+          "durationMinutes",
+          "slug"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "After trimming: 1–100 characters."
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description, at most 2000 characters."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "A whole number from 1 to 540, not restricted to a 15-minute multiple."
+          },
+          "slug": {
+            "type": "string",
+            "description": "After trimming: 1–80 lowercase Latin letters/digits with single hyphens between nonempty parts. Unique among all offers; never silently renamed."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "New hidden meeting type. Trim name and address at their edges only. Description consisting only of whitespace becomes empty. Unknown fields cannot assign identity or publication.",
+        "example": {
+          "name": "Planning",
+          "description": "",
+          "durationMinutes": 20,
+          "slug": "planning"
+        }
+      },
+      "ReviewedMeeting": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "durationMinutes"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Reviewed meeting name."
+          },
+          "description": {
+            "type": "string",
+            "description": "Reviewed description."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Reviewed duration in minutes."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Meeting details explicitly reviewed by the guest, checked again at confirmation.",
+        "example": {
+          "name": "Discussion",
+          "description": "",
+          "durationMinutes": 20
+        }
+      }
+    },
+    "securitySchemes": {
+      "AdminCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "calendar_admin",
+        "description": "Opaque HttpOnly SameSite=Strict cookie, Secure in production."
       }
     }
   },

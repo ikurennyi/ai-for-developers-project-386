@@ -1,0 +1,62 @@
+services:
+  postgres:
+    labels:
+      dev.calendar.checkout: ${CALENDAR_CHECKOUT:?required}
+    image: postgres:18.3-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
+    environment:
+      POSTGRES_USER: calendar
+      POSTGRES_DB: calendar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U calendar -d calendar']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  app:
+    labels:
+      dev.calendar.checkout: ${CALENDAR_CHECKOUT:?required}
+    build: .
+    environment:
+      DATABASE_URL: postgresql://calendar:${POSTGRES_PASSWORD:?required}@postgres:5432/calendar
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?required}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://localhost:3000/api/v1/health]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
+  https:
+    labels:
+      dev.calendar.checkout: ${CALENDAR_CHECKOUT:?required}
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    ports:
+      - "127.0.0.1:${HTTPS_PORT:?required}:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificates:/data
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, --quiet, --no-check-certificate, --spider, https://localhost/api/v1/health]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  database:
+    labels:
+      dev.calendar.checkout: ${CALENDAR_CHECKOUT:?required}
+  certificates:
+    labels:
+      dev.calendar.checkout: ${CALENDAR_CHECKOUT:?required}
+networks:
+  default:
+    labels:
+      dev.calendar.checkout: ${CALENDAR_CHECKOUT:?required}

@@ -1,9 +1,65 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import AdminLayout from '../views/AdminLayout.vue'
+import AdminLoginView from '../views/AdminLoginView.vue'
+import AdminLinksView from '../views/AdminLinksView.vue'
+import AdminHomeView from '../views/AdminHomeView.vue'
+import AdminBookingsView from '../views/AdminBookingsView.vue'
+import NewMeetingTypeView from '../views/NewMeetingTypeView.vue'
+import { hasAdminSession } from '../admin/session'
+import MeetingTypesView from '../views/MeetingTypesView.vue'
+import CalendarView from '../views/CalendarView.vue'
+import { persistGuestState } from '../guest/state'
+import BookingConfirmationView from '../views/BookingConfirmationView.vue'
+import { adminFormNavigated } from '../admin/formRecovery'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [{ path: '/', name: 'home', component: HomeView }],
+  routes: [
+    { path: '/', name: 'home', component: HomeView },
+    { path: '/book', name: 'meeting-types', component: MeetingTypesView },
+    {
+      path: '/confirmation/:token',
+      name: 'booking-confirmation',
+      component: BookingConfirmationView,
+    },
+    { path: '/book/:slug', name: 'meeting-calendar', component: CalendarView },
+    { path: '/book/:slug/details', name: 'meeting-form', component: CalendarView },
+    { path: '/admin/login', name: 'admin-login', component: AdminLoginView },
+    {
+      path: '/admin',
+      component: AdminLayout,
+      meta: { administrator: true },
+      children: [
+        { path: '', name: 'admin-home', component: AdminHomeView },
+        { path: 'links', name: 'admin-links', component: AdminLinksView },
+        { path: 'links/new', name: 'admin-new-meeting-type', component: NewMeetingTypeView },
+        { path: 'links/:id/edit', name: 'admin-edit-meeting-type', component: NewMeetingTypeView },
+        {
+          path: 'bookings',
+          name: 'admin-bookings',
+          component: AdminBookingsView,
+        },
+      ],
+    },
+  ],
+})
+
+router.beforeEach(async (to) => {
+  if (!to.meta.administrator) return true
+  try {
+    if (await hasAdminSession()) return true
+  } catch {
+    // Fail closed on network failure; the login page offers an explicit retry.
+  }
+  return { name: 'admin-login', query: { returnTo: to.fullPath } }
+})
+
+router.afterEach((to, _from, failure) => {
+  if (!failure) {
+    persistGuestState()
+    adminFormNavigated(to.path, to.query.returnTo)
+  }
 })
 
 export default router

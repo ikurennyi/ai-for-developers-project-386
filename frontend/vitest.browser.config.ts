@@ -9,6 +9,10 @@ export default mergeConfig(
       ? `${process.env.SMOKE_RUNTIME_DIR}/vite-cache`
       : undefined,
     test: {
+      provide: {
+        emptyMeetingTypes: process.env.SMOKE_EMPTY_MEETING_TYPES === '1',
+        occupiedCalendar: process.env.SMOKE_OCCUPIED_CALENDAR === '1',
+      },
       attachmentsDir: process.env.SMOKE_RUNTIME_DIR
         ? `${process.env.SMOKE_RUNTIME_DIR}/attachments`
         : undefined,
@@ -24,7 +28,7 @@ export default mergeConfig(
           strictPort: true,
         },
         screenshotFailures: false,
-        provider: playwright(),
+        provider: playwright({ contextOptions: { timezoneId: 'America/Los_Angeles' } }),
         instances: [{ browser: 'chromium' }],
       },
     },

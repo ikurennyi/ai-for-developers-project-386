@@ -5,6 +5,335 @@ export type ClientOptions = {
 };
 
 /**
+ * One page of retained administrator booking snapshots.
+ */
+export type AdminBookingPage = {
+    /**
+     * Saved meeting and guest details in the requested order.
+     */
+    bookings: Array<Booking>;
+    /**
+     * Requested one-based page.
+     */
+    page: number;
+    /**
+     * Fixed maximum records per page.
+     */
+    pageSize: 20;
+    /**
+     * Total matching records, not limited by the creation window.
+     */
+    total: number;
+    [key: string]: unknown;
+};
+
+/**
+ * All ongoing and future bookings, without a creation-window limit or pagination.
+ */
+export type AdminHome = {
+    /**
+     * Fixed display zone.
+     */
+    timeZone: 'Europe/Berlin';
+    /**
+     * Berlin days ascending; empty when no booking has an end strictly after server now.
+     */
+    days: Array<AdminHomeDay>;
+    [key: string]: unknown;
+};
+
+/**
+ * Unfinished bookings sharing a start date in Europe/Berlin.
+ */
+export type AdminHomeDay = {
+    /**
+     * Berlin start date.
+     */
+    date: string;
+    /**
+     * Saved bookings ordered by start ascending, then identifier.
+     */
+    bookings: Array<Booking>;
+    [key: string]: unknown;
+};
+
+/**
+ * An administrator-visible offer, including hidden drafts.
+ */
+export type AdminMeetingType = {
+    /**
+     * Immutable system-assigned identifier.
+     */
+    id: string;
+    /**
+     * Meeting name.
+     */
+    name: string;
+    /**
+     * Optional meeting description; empty when not supplied.
+     */
+    description: string;
+    /**
+     * Meeting duration in whole minutes.
+     */
+    durationMinutes: number;
+    /**
+     * Current unique public address segment.
+     */
+    slug: string;
+    /**
+     * True only after a separate publication action.
+     */
+    published: boolean;
+    [key: string]: unknown;
+};
+
+/**
+ * All meeting types in creation order.
+ */
+export type AdminMeetingTypeList = {
+    /**
+     * Published and hidden offers.
+     */
+    meetingTypes: Array<AdminMeetingType>;
+    [key: string]: unknown;
+};
+
+/**
+ * The single administrator's current session. Expiry never slides.
+ */
+export type AdminSession = {
+    /**
+     * Configured administrator username.
+     */
+    username: string;
+    /**
+     * Absolute session expiry, 24 hours after login.
+     */
+    expiresAt: string;
+    [key: string]: unknown;
+};
+
+/**
+ * An English API error without credentials or private data.
+ */
+export type AuthError = {
+    /**
+     * Safe explanation of the failure.
+     */
+    message: string;
+    [key: string]: unknown;
+};
+
+/**
+ * Public calendar snapshot calculated using server time, without guest or occupancy details.
+ */
+export type Availability = {
+    /**
+     * The current published offer.
+     */
+    meetingType: MeetingType;
+    /**
+     * Predetermined public host name, never an email address.
+     */
+    hostName: string;
+    /**
+     * The fixed schedule and display time zone.
+     */
+    timeZone: 'Europe/Berlin';
+    /**
+     * Server instant used to calculate this snapshot.
+     */
+    serverNow: string;
+    /**
+     * Today's Berlin date.
+     */
+    today: string;
+    /**
+     * Inclusive last Berlin date: today plus thirteen calendar dates.
+     */
+    windowEnd: string;
+    /**
+     * All fourteen dates, including weekends.
+     */
+    days: Array<CalendarDay>;
+    [key: string]: unknown;
+};
+
+/**
+ * A persisted snapshot returned to its creating request or the authenticated administrator; there is no public booking lookup.
+ */
+export type Booking = {
+    /**
+     * System identifier, not a public access credential.
+     */
+    id: string;
+    /**
+     * Saved meeting name.
+     */
+    meetingName: string;
+    /**
+     * Saved description.
+     */
+    meetingDescription: string;
+    /**
+     * Saved duration.
+     */
+    durationMinutes: number;
+    /**
+     * Fixed calendar owner.
+     */
+    hostName: string;
+    /**
+     * Fixed display zone.
+     */
+    timeZone: 'Europe/Berlin';
+    /**
+     * Exact saved start.
+     */
+    startsAt: string;
+    /**
+     * Exact saved end.
+     */
+    endsAt: string;
+    /**
+     * Trimmed name.
+     */
+    guestName: string;
+    /**
+     * Guest email.
+     */
+    guestEmail: string;
+    /**
+     * Plain-text notes.
+     */
+    notes: string;
+    [key: string]: unknown;
+};
+
+/**
+ * An explicit confirmation; reading availability never creates this record.
+ */
+export type BookingConfirmation = {
+    /**
+     * Optional private retry capability: 32 cryptographically random bytes encoded as 64 lowercase hexadecimal characters. Reuse only for the same logical attempt. Never put it in a URL or shared browser storage.
+     */
+    attemptToken?: string;
+    /**
+     * Exact selected start instant.
+     */
+    startsAt: string;
+    /**
+     * Details the guest reviewed.
+     */
+    meetingType: ReviewedMeeting;
+    /**
+     * Guest name, trimmed to 1–100 characters.
+     */
+    guestName: string;
+    /**
+     * Required email, at most 254 characters.
+     */
+    guestEmail: string;
+    /**
+     * Optional plain-text notes, at most 2000 characters.
+     */
+    notes?: string;
+    [key: string]: unknown;
+};
+
+/**
+ * A rejected confirmation. occupied and invalid_interval require refreshed availability and a cleared time, retaining the date and guest draft without substitution. details_changed requires current name, description and duration to be displayed and a fresh explicit confirmation; never automatically resubmit.
+ */
+export type BookingError = {
+    /**
+     * Machine-readable reason; attempt_deleted means a committed attempt's booking was permanently removed and cannot be recreated by replay.
+     */
+    code: 'validation' | 'details_changed' | 'invalid_interval' | 'occupied' | 'attempt_deleted';
+    /**
+     * English explanation.
+     */
+    message: string;
+    /**
+     * Field errors for invalid guest data.
+     */
+    errors?: GuestErrors;
+    [key: string]: unknown;
+};
+
+/**
+ * A Berlin calendar date in the booking window.
+ */
+export type CalendarDay = {
+    /**
+     * ISO local date in Europe/Berlin.
+     */
+    date: string;
+    /**
+     * Monday through Friday; weekends still count toward the window.
+     */
+    workingDay: boolean;
+    /**
+     * Schedule-valid intervals, empty on weekends.
+     */
+    intervals: Array<CalendarInterval>;
+    [key: string]: unknown;
+};
+
+/**
+ * A schedule-valid interval. Availability is advisory and never reserves time.
+ */
+export type CalendarInterval = {
+    /**
+     * Exact start instant on the Berlin quarter-hour grid.
+     */
+    startsAt: string;
+    /**
+     * Exact end instant, including the full meeting duration.
+     */
+    endsAt: string;
+    /**
+     * True only for future intervals without shared occupancy.
+     */
+    available: boolean;
+    [key: string]: unknown;
+};
+
+/**
+ * Initial credentials are configured by the operator, not public defaults.
+ */
+export type Credentials = {
+    /**
+     * Administrator username.
+     */
+    username: string;
+    /**
+     * Administrator password.
+     */
+    password: string;
+    [key: string]: unknown;
+};
+
+/**
+ * English field validation messages; absent keys have no error.
+ */
+export type GuestErrors = {
+    /**
+     * Name error.
+     */
+    guestName?: string;
+    /**
+     * Email error.
+     */
+    guestEmail?: string;
+    /**
+     * Notes error.
+     */
+    notes?: string;
+    [key: string]: unknown;
+};
+
+/**
  * API process health; does not imply database readiness.
  */
 export type Health = {
@@ -14,6 +343,573 @@ export type Health = {
     status: 'ok';
     [key: string]: unknown;
 };
+
+/**
+ * A published offer available for guest booking.
+ */
+export type MeetingType = {
+    /**
+     * Immutable system-assigned identifier.
+     */
+    id: string;
+    /**
+     * Meeting name.
+     */
+    name: string;
+    /**
+     * Optional meeting description; empty when not supplied.
+     */
+    description: string;
+    /**
+     * Meeting duration in whole minutes.
+     */
+    durationMinutes: number;
+    /**
+     * Current unique public address segment.
+     */
+    slug: string;
+    [key: string]: unknown;
+};
+
+/**
+ * English errors keyed by the form's field names.
+ */
+export type MeetingTypeFieldErrors = {
+    /**
+     * Name errors.
+     */
+    name?: Array<string>;
+    /**
+     * Description errors.
+     */
+    description?: Array<string>;
+    /**
+     * Duration errors.
+     */
+    durationMinutes?: Array<string>;
+    /**
+     * Address errors, including concurrent collisions.
+     */
+    slug?: Array<string>;
+    [key: string]: unknown;
+};
+
+/**
+ * The available public meeting offers.
+ */
+export type MeetingTypeList = {
+    /**
+     * Published offers, or an empty array when none are available.
+     */
+    meetingTypes: Array<MeetingType>;
+    [key: string]: unknown;
+};
+
+/**
+ * Explicit desired publication state; saving details never changes this state.
+ */
+export type MeetingTypePublication = {
+    /**
+     * Publish for new bookings, or hide without changing existing bookings or occupancy.
+     */
+    published: boolean;
+    [key: string]: unknown;
+};
+
+/**
+ * Indistinguishable response for hidden and nonexistent meeting types.
+ */
+export type MeetingTypeUnavailable = {
+    /**
+     * Safe public explanation.
+     */
+    message: 'Meeting type unavailable';
+    [key: string]: unknown;
+};
+
+/**
+ * New hidden meeting type. Trim name and address at their edges only. Description consisting only of whitespace becomes empty. Unknown fields cannot assign identity or publication.
+ */
+export type NewMeetingType = {
+    /**
+     * After trimming: 1–100 characters.
+     */
+    name: string;
+    /**
+     * Optional description, at most 2000 characters.
+     */
+    description?: string;
+    /**
+     * A whole number from 1 to 540, not restricted to a 15-minute multiple.
+     */
+    durationMinutes: number;
+    /**
+     * After trimming: 1–80 lowercase Latin letters/digits with single hyphens between nonempty parts. Unique among all offers; never silently renamed.
+     */
+    slug: string;
+    [key: string]: unknown;
+};
+
+/**
+ * Meeting details explicitly reviewed by the guest, checked again at confirmation.
+ */
+export type ReviewedMeeting = {
+    /**
+     * Reviewed meeting name.
+     */
+    name: string;
+    /**
+     * Reviewed description.
+     */
+    description: string;
+    /**
+     * Reviewed duration in minutes.
+     */
+    durationMinutes: number;
+    [key: string]: unknown;
+};
+
+export type ListAdminBookingsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Defaults to Upcoming.
+         */
+        period?: 'upcoming' | 'past';
+        /**
+         * One-based page; defaults to 1. Beyond the last page returns an empty array.
+         */
+        page?: number;
+    };
+    url: '/admin/bookings';
+};
+
+export type ListAdminBookingsErrors = {
+    /**
+     * The server could not understand the request due to invalid syntax.
+     */
+    400: AuthError;
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type ListAdminBookingsError = ListAdminBookingsErrors[keyof ListAdminBookingsErrors];
+
+export type ListAdminBookingsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminBookingPage;
+};
+
+export type ListAdminBookingsResponse = ListAdminBookingsResponses[keyof ListAdminBookingsResponses];
+
+export type DeleteAdminBookingData = {
+    body?: never;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path: {
+        /**
+         * Saved booking identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/bookings/{id}';
+};
+
+export type DeleteAdminBookingErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: AuthError;
+    /**
+     * Service unavailable.
+     */
+    503: AuthError;
+};
+
+export type DeleteAdminBookingError = DeleteAdminBookingErrors[keyof DeleteAdminBookingErrors];
+
+export type DeleteAdminBookingResponses = {
+    /**
+     * There is no content to send for this request, but the headers may be useful.
+     */
+    204: void;
+};
+
+export type DeleteAdminBookingResponse = DeleteAdminBookingResponses[keyof DeleteAdminBookingResponses];
+
+export type GetAdminHomeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/home';
+};
+
+export type GetAdminHomeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type GetAdminHomeError = GetAdminHomeErrors[keyof GetAdminHomeErrors];
+
+export type GetAdminHomeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminHome;
+};
+
+export type GetAdminHomeResponse = GetAdminHomeResponses[keyof GetAdminHomeResponses];
+
+export type ListAdminMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/meeting-types';
+};
+
+export type ListAdminMeetingTypesErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type ListAdminMeetingTypesError = ListAdminMeetingTypesErrors[keyof ListAdminMeetingTypesErrors];
+
+export type ListAdminMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingTypeList;
+};
+
+export type ListAdminMeetingTypesResponse = ListAdminMeetingTypesResponses[keyof ListAdminMeetingTypesResponses];
+
+export type CreateAdminMeetingTypeData = {
+    /**
+     * The administrator's explicit offer details.
+     */
+    body: NewMeetingType;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/meeting-types';
+};
+
+export type CreateAdminMeetingTypeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The offer was not saved; preserve the form and correct these fields.
+     */
+    422: {
+        /**
+         * Safe English summary.
+         */
+        message: string;
+        /**
+         * Errors beside the relevant fields.
+         */
+        errors: MeetingTypeFieldErrors;
+        [key: string]: unknown;
+    };
+};
+
+export type CreateAdminMeetingTypeError = CreateAdminMeetingTypeErrors[keyof CreateAdminMeetingTypeErrors];
+
+export type CreateAdminMeetingTypeResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: AdminMeetingType;
+};
+
+export type CreateAdminMeetingTypeResponse = CreateAdminMeetingTypeResponses[keyof CreateAdminMeetingTypeResponses];
+
+export type GetAdminMeetingTypeData = {
+    body?: never;
+    path: {
+        /**
+         * Immutable system-assigned identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/meeting-types/{id}';
+};
+
+export type GetAdminMeetingTypeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The administrative meeting type does not exist.
+     */
+    404: AuthError;
+};
+
+export type GetAdminMeetingTypeError = GetAdminMeetingTypeErrors[keyof GetAdminMeetingTypeErrors];
+
+export type GetAdminMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingType;
+};
+
+export type GetAdminMeetingTypeResponse = GetAdminMeetingTypeResponses[keyof GetAdminMeetingTypeResponses];
+
+export type UpdateAdminMeetingTypeData = {
+    /**
+     * Complete editable details; omitted description is empty.
+     */
+    body: NewMeetingType;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path: {
+        /**
+         * Immutable system-assigned identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/meeting-types/{id}';
+};
+
+export type UpdateAdminMeetingTypeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The administrative meeting type does not exist.
+     */
+    404: AuthError;
+    /**
+     * The offer was not saved; preserve the form and correct these fields.
+     */
+    422: {
+        /**
+         * Safe English summary.
+         */
+        message: string;
+        /**
+         * Errors beside the relevant fields.
+         */
+        errors: MeetingTypeFieldErrors;
+        [key: string]: unknown;
+    };
+};
+
+export type UpdateAdminMeetingTypeError = UpdateAdminMeetingTypeErrors[keyof UpdateAdminMeetingTypeErrors];
+
+export type UpdateAdminMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingType;
+};
+
+export type UpdateAdminMeetingTypeResponse = UpdateAdminMeetingTypeResponses[keyof UpdateAdminMeetingTypeResponses];
+
+export type SetAdminMeetingTypePublicationData = {
+    /**
+     * Explicit desired state.
+     */
+    body: MeetingTypePublication;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path: {
+        /**
+         * Immutable system-assigned identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/meeting-types/{id}/publication';
+};
+
+export type SetAdminMeetingTypePublicationErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The administrative meeting type does not exist.
+     */
+    404: AuthError;
+    /**
+     * The offer was not saved; preserve the form and correct these fields.
+     */
+    422: {
+        /**
+         * Safe English summary.
+         */
+        message: string;
+        /**
+         * Errors beside the relevant fields.
+         */
+        errors: MeetingTypeFieldErrors;
+        [key: string]: unknown;
+    };
+};
+
+export type SetAdminMeetingTypePublicationError = SetAdminMeetingTypePublicationErrors[keyof SetAdminMeetingTypePublicationErrors];
+
+export type SetAdminMeetingTypePublicationResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingType;
+};
+
+export type SetAdminMeetingTypePublicationResponse = SetAdminMeetingTypePublicationResponses[keyof SetAdminMeetingTypePublicationResponses];
+
+export type LogoutAdminData = {
+    body?: never;
+    headers: {
+        /**
+         * Required custom header protecting against cross-origin form submissions.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/session';
+};
+
+export type LogoutAdminErrors = {
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+};
+
+export type LogoutAdminError = LogoutAdminErrors[keyof LogoutAdminErrors];
+
+export type LogoutAdminResponses = {
+    /**
+     * There is no content to send for this request, but the headers may be useful.
+     */
+    204: void;
+};
+
+export type LogoutAdminResponse = LogoutAdminResponses[keyof LogoutAdminResponses];
+
+export type GetAdminSessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/session';
+};
+
+export type GetAdminSessionErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type GetAdminSessionError = GetAdminSessionErrors[keyof GetAdminSessionErrors];
+
+export type GetAdminSessionResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminSession;
+};
+
+export type GetAdminSessionResponse = GetAdminSessionResponses[keyof GetAdminSessionResponses];
+
+export type LoginAdminData = {
+    /**
+     * The operator-configured username and password.
+     */
+    body: Credentials;
+    headers: {
+        /**
+         * Required custom header; cross-origin browsers must preflight and are not granted CORS access.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/session';
+};
+
+export type LoginAdminErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * Ten login attempts per IP per 15-minute window have been used.
+     */
+    429: AuthError;
+};
+
+export type LoginAdminError = LoginAdminErrors[keyof LoginAdminErrors];
+
+export type LoginAdminResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminSession;
+};
+
+export type LoginAdminResponse = LoginAdminResponses[keyof LoginAdminResponses];
 
 export type GetHealthData = {
     body?: never;
@@ -30,3 +926,90 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type ListMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/meeting-types';
+};
+
+export type ListMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: MeetingTypeList;
+};
+
+export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];
+
+export type GetAvailabilityData = {
+    body?: never;
+    path: {
+        /**
+         * Current public address segment.
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/meeting-types/{slug}/availability';
+};
+
+export type GetAvailabilityErrors = {
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: MeetingTypeUnavailable;
+};
+
+export type GetAvailabilityError = GetAvailabilityErrors[keyof GetAvailabilityErrors];
+
+export type GetAvailabilityResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Availability;
+};
+
+export type GetAvailabilityResponse = GetAvailabilityResponses[keyof GetAvailabilityResponses];
+
+export type ConfirmBookingData = {
+    /**
+     * Reviewed meeting, selected instant and guest details.
+     */
+    body: BookingConfirmation;
+    path: {
+        /**
+         * Current published address.
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/meeting-types/{slug}/bookings';
+};
+
+export type ConfirmBookingErrors = {
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: MeetingTypeUnavailable;
+    /**
+     * The request conflicts with the current state of the server.
+     */
+    409: BookingError;
+    /**
+     * Client error
+     */
+    422: BookingError;
+};
+
+export type ConfirmBookingError = ConfirmBookingErrors[keyof ConfirmBookingErrors];
+
+export type ConfirmBookingResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: Booking;
+};
+
+export type ConfirmBookingResponse = ConfirmBookingResponses[keyof ConfirmBookingResponses];

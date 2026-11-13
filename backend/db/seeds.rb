@@ -1,9 +1,11 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Example:
-#
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+# Stable keys are independent of editable public addresses. Never restore an offer
+# by its original slug: the administrator may deliberately have changed it.
+[ 15, 30 ].each do |minutes|
+  MeetingType.find_or_create_by!(initial_key: "initial-#{minutes}") do |type|
+    type.name = "#{minutes}-minute meeting"
+    type.description = minutes == 15 ? "A short conversation to connect." : "More time for a focused discussion."
+    type.duration_minutes = minutes
+    type.slug = "#{minutes}-minute-meeting"
+    type.published = true
+  end
+end
