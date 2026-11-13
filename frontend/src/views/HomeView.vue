@@ -3,7 +3,7 @@
     <header class="site-header">
       <a class="brand" href="/" aria-label="Calendar home">Calendar</a>
       <nav aria-label="Main navigation">
-        <a class="nav-link" href="/book">Book</a>
+        <RouterLink class="nav-link" to="/book">Book a meeting</RouterLink>
         <a class="nav-link admin-link" href="/admin">Admin</a>
       </nav>
     </header>
@@ -14,9 +14,11 @@
           <p class="eyebrow">Simple scheduling, more meaningful conversations</p>
           <h1 id="hero-title">Book a call in minutes</h1>
           <p class="hero-description">
-            Book a meeting in a minute: choose an event type and a time that works for you.
+            Book a meeting in a minute: choose a meeting type and a time that works for you.
           </p>
-          <a class="primary-link" href="/book">Book now <span aria-hidden="true">→</span></a>
+          <RouterLink class="primary-link" to="/book"
+            >Book now <span aria-hidden="true">→</span></RouterLink
+          >
           <p class="no-account">No account needed</p>
         </div>
         <div class="hero-art" aria-hidden="true">
@@ -37,9 +39,9 @@
               ><span>1</span> <span>2</span><span>3</span><span>4</span><span>5</span
               ><span class="selected">6</span><span>7</span><span>8</span>
             </div>
-            <div class="time-option"><span>15 min meeting</span><strong>10:30 am</strong></div>
+            <div class="time-option"><span>15 min meeting</span><strong>10:30</strong></div>
             <div class="time-option secondary-time">
-              <span>30 min meeting</span><strong>11:00 am</strong>
+              <span>30 min meeting</span><strong>11:00</strong>
             </div>
           </div>
           <span class="decor decor-one"></span>
@@ -55,7 +57,7 @@
         <div class="feature-list">
           <article class="feature-card">
             <span class="feature-number">01</span>
-            <h3>Choose an event type and a convenient time</h3>
+            <h3>Choose a meeting type and a convenient time</h3>
             <p>Find a meeting length and time that fit your schedule.</p>
           </article>
           <article class="feature-card">

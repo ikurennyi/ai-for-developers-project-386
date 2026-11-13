@@ -1,4 +1,4 @@
-import { getHealth, loginAdmin, getAdminSession, logoutAdmin, type Health } from './sdk';
+import { getHealth, loginAdmin, getAdminSession, logoutAdmin, listMeetingTypes, type Health, type MeetingType } from './sdk';
 
 // Consumer-level checks: generated types preserve the literal health response.
 const healthy: Health = { status: 'ok' };
@@ -28,3 +28,9 @@ async function authenticate() {
   return { expiry, username };
 }
 void authenticate;
+
+async function readMeetingTypes(): Promise<MeetingType[]> {
+  const response = await listMeetingTypes({ throwOnError: true });
+  return response.data.meetingTypes;
+}
+void readMeetingTypes;

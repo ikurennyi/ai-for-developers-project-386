@@ -4,6 +4,8 @@
 # and recreated between test runs. Don't rely on the data there!
 
 Rails.application.configure do
+  # Isolated check databases must never rewrite the committed schema.
+  config.active_record.dump_schema_after_migration = false
   # Temporary smoke processes keep logs in their own captured stdout, not a shared file.
   config.logger = ActiveSupport::Logger.new($stdout) if ENV["RAILS_LOG_TO_STDOUT"] == "1"
 

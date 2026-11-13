@@ -10,6 +10,9 @@
       "name": "Health"
     },
     {
+      "name": "Meeting types"
+    },
+    {
       "name": "Administrator authentication"
     }
   ],
@@ -200,6 +203,29 @@
           "Health"
         ]
       }
+    },
+    "/meeting-types": {
+      "get": {
+        "operationId": "listMeetingTypes",
+        "summary": "List published meeting types",
+        "description": "Return every published offer. Hidden offers are never included.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingTypeList"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Meeting types"
+        ]
+      }
     }
   },
   "components": {
@@ -300,6 +326,74 @@
         "description": "API process health; does not imply database readiness.",
         "example": {
           "status": "ok"
+        }
+      },
+      "MeetingType": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "durationMinutes",
+          "slug"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Immutable system-assigned identifier."
+          },
+          "name": {
+            "type": "string",
+            "description": "Meeting name."
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional meeting description; empty when not supplied."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 540,
+            "description": "Meeting duration in whole minutes."
+          },
+          "slug": {
+            "type": "string",
+            "description": "Current unique public address segment."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "A published offer available for guest booking.",
+        "example": {
+          "id": "29a71c26-c842-407d-bcd2-e93c8ea0ceab",
+          "name": "Short meeting",
+          "description": "A quick conversation.",
+          "durationMinutes": 15,
+          "slug": "short-meeting"
+        }
+      },
+      "MeetingTypeList": {
+        "type": "object",
+        "required": [
+          "meetingTypes"
+        ],
+        "properties": {
+          "meetingTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingType"
+            },
+            "description": "Published offers, or an empty array when none are available."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "The available public meeting offers.",
+        "example": {
+          "meetingTypes": []
         }
       }
     },

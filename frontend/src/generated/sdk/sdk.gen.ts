@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetHealthData, GetHealthResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses } from './types.gen';
+import type { GetAdminSessionData, GetAdminSessionErrors, GetAdminSessionResponses, GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesResponses, LoginAdminData, LoginAdminErrors, LoginAdminResponses, LogoutAdminData, LogoutAdminErrors, LogoutAdminResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -68,3 +68,10 @@ export const loginAdmin = <ThrowOnError extends boolean = false>(options: Option
  * Check API process health independently of database readiness.
  */
 export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, unknown, ThrowOnError>({ url: '/health', ...options });
+
+/**
+ * List published meeting types
+ *
+ * Return every published offer. Hidden offers are never included.
+ */
+export const listMeetingTypes = <ThrowOnError extends boolean = false>(options?: Options<ListMeetingTypesData, ThrowOnError>): RequestResult<ListMeetingTypesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListMeetingTypesResponses, unknown, ThrowOnError>({ url: '/meeting-types', ...options });
