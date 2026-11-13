@@ -4,6 +4,20 @@ module Api
       class BookingsController < BaseController
         PAGE_SIZE = 20
 
+        def destroy
+          Booking.transaction(requires_new: true) do
+            booking = Booking.lock.find(params[:id])
+            occupancy = booking.occupancy
+            booking.destroy!
+            occupancy.destroy!
+          end
+          head :no_content
+        rescue ActiveRecord::RecordNotFound
+          render json: { message: "Booking not found. Refresh the list before trying again." }, status: :not_found
+        rescue ActiveRecord::ActiveRecordError
+          render json: { message: "Unable to delete booking. Please try again." }, status: :service_unavailable
+        end
+
         def index
           period = params.fetch(:period, "upcoming")
           page = params.fetch(:page, "1")
