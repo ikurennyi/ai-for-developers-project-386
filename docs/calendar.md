@@ -1,9 +1,9 @@
 # Public calendar (#27)
 
 `/book/:slug` opens the calendar; `/book/:slug/details?date=…&start=…`
-is currently a summary-only guest-form destination. Booking confirmation belongs
-to #28. Neither page creates a booking, reserves time or accepts guest details.
-The only URL selection data is the Berlin date and exact start instant.
+opens the guest form. Selection and Continue never reserve time; only a successful
+explicit Confirm booking creates a booking. The only URL selection data is the
+Berlin date and exact start instant. See [confirmation](booking-confirmation.md).
 
 ## Read contract
 
@@ -38,14 +38,13 @@ PostgreSQL enforces positive length and a GiST exclusion constraint on
 partial, nested, containing and identical overlaps cannot both commit, even on
 independent connections. These are UTC Rails timestamps, not civil Berlin times.
 
-For #28, associate each booking with its occupancy and create both in one
-transaction **only after explicit successful confirmation**. Catch PostgreSQL
-exclusion violations as distinguishable occupied-interval conflicts. Revalidate
-the schedule, publication, current details, grid, window and server time at that
-boundary; the read snapshot is advisory, not a lock or a reservation.
-Booking deletion must remove occupancy in the same transaction. Snapshots, guest
-data, confirmation-attempt recovery and authenticated deletion remain #28/later
-work, not capabilities of this slice.
+Confirmation associates each booking with its occupancy and creates both in one
+transaction **only after explicit successful confirmation**. PostgreSQL exclusion
+violations become distinguishable occupied-interval conflicts. Confirmation
+revalidates schedule, publication, current details, grid, window and server time;
+the read snapshot is advisory, not a lock or a reservation.
+Future authenticated booking deletion must remove occupancy in the same transaction.
+Confirmation-attempt recovery and authenticated deletion remain later work.
 
 ## Local verification
 

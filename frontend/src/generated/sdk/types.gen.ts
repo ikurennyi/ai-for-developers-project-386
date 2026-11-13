@@ -66,6 +66,103 @@ export type Availability = {
 };
 
 /**
+ * A persisted confirmation returned only to its creating request; there is no public booking lookup.
+ */
+export type Booking = {
+    /**
+     * System identifier, not a public access credential.
+     */
+    id: string;
+    /**
+     * Saved meeting name.
+     */
+    meetingName: string;
+    /**
+     * Saved description.
+     */
+    meetingDescription: string;
+    /**
+     * Saved duration.
+     */
+    durationMinutes: number;
+    /**
+     * Fixed calendar owner.
+     */
+    hostName: string;
+    /**
+     * Fixed display zone.
+     */
+    timeZone: 'Europe/Berlin';
+    /**
+     * Exact saved start.
+     */
+    startsAt: string;
+    /**
+     * Exact saved end.
+     */
+    endsAt: string;
+    /**
+     * Trimmed name.
+     */
+    guestName: string;
+    /**
+     * Guest email.
+     */
+    guestEmail: string;
+    /**
+     * Plain-text notes.
+     */
+    notes: string;
+    [key: string]: unknown;
+};
+
+/**
+ * An explicit confirmation; reading availability never creates this record.
+ */
+export type BookingConfirmation = {
+    /**
+     * Exact selected start instant.
+     */
+    startsAt: string;
+    /**
+     * Details the guest reviewed.
+     */
+    meetingType: ReviewedMeeting;
+    /**
+     * Guest name, trimmed to 1–100 characters.
+     */
+    guestName: string;
+    /**
+     * Required email, at most 254 characters.
+     */
+    guestEmail: string;
+    /**
+     * Optional plain-text notes, at most 2000 characters.
+     */
+    notes?: string;
+    [key: string]: unknown;
+};
+
+/**
+ * A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.
+ */
+export type BookingError = {
+    /**
+     * Machine-readable reason.
+     */
+    code: 'validation' | 'details_changed' | 'invalid_interval' | 'occupied';
+    /**
+     * English explanation.
+     */
+    message: string;
+    /**
+     * Field errors for invalid guest data.
+     */
+    errors?: GuestErrors;
+    [key: string]: unknown;
+};
+
+/**
  * A Berlin calendar date in the booking window.
  */
 export type CalendarDay = {
@@ -115,6 +212,25 @@ export type Credentials = {
      * Administrator password.
      */
     password: string;
+    [key: string]: unknown;
+};
+
+/**
+ * English field validation messages; absent keys have no error.
+ */
+export type GuestErrors = {
+    /**
+     * Name error.
+     */
+    guestName?: string;
+    /**
+     * Email error.
+     */
+    guestEmail?: string;
+    /**
+     * Notes error.
+     */
+    notes?: string;
     [key: string]: unknown;
 };
 
@@ -175,6 +291,25 @@ export type MeetingTypeUnavailable = {
      * Safe public explanation.
      */
     message: 'Meeting type unavailable';
+    [key: string]: unknown;
+};
+
+/**
+ * Meeting details explicitly reviewed by the guest, checked again at confirmation.
+ */
+export type ReviewedMeeting = {
+    /**
+     * Reviewed meeting name.
+     */
+    name: string;
+    /**
+     * Reviewed description.
+     */
+    description: string;
+    /**
+     * Reviewed duration in minutes.
+     */
+    durationMinutes: number;
     [key: string]: unknown;
 };
 
@@ -337,3 +472,44 @@ export type GetAvailabilityResponses = {
 };
 
 export type GetAvailabilityResponse = GetAvailabilityResponses[keyof GetAvailabilityResponses];
+
+export type ConfirmBookingData = {
+    /**
+     * Reviewed meeting, selected instant and guest details.
+     */
+    body: BookingConfirmation;
+    path: {
+        /**
+         * Current published address.
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/meeting-types/{slug}/bookings';
+};
+
+export type ConfirmBookingErrors = {
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: MeetingTypeUnavailable;
+    /**
+     * The request conflicts with the current state of the server.
+     */
+    409: BookingError;
+    /**
+     * Client error
+     */
+    422: BookingError;
+};
+
+export type ConfirmBookingError = ConfirmBookingErrors[keyof ConfirmBookingErrors];
+
+export type ConfirmBookingResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: Booking;
+};
+
+export type ConfirmBookingResponse = ConfirmBookingResponses[keyof ConfirmBookingResponses];

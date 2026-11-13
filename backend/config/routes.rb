@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       get "health", to: "health#show"
       get "meeting-types", to: "meeting_types#index"
       get "meeting-types/:slug/availability", to: "availability#show"
+      post "meeting-types/:slug/bookings", to: "bookings#create"
     end
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

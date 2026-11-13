@@ -235,3 +235,76 @@ op getAvailability(
   @header contentType: "application/json";
   @body body: MeetingTypeUnavailable;
 };
+
+@doc("Meeting details explicitly reviewed by the guest, checked again at confirmation.")
+@example(#{ name: "Discussion", description: "", durationMinutes: 20 })
+model ReviewedMeeting {
+  @doc("Reviewed meeting name.") name: string;
+  @doc("Reviewed description.") description: string;
+  @doc("Reviewed duration in minutes.") durationMinutes: int32;
+}
+
+@doc("An explicit confirmation; reading availability never creates this record.")
+@example(#{ startsAt: utcDateTime.fromISO("2026-11-13T09:00:00Z"), meetingType: #{ name: "Discussion", description: "", durationMinutes: 20 }, guestName: "Guest", guestEmail: "guest@example.com", notes: "" })
+model BookingConfirmation {
+  @doc("Exact selected start instant.") startsAt: utcDateTime;
+  @doc("Details the guest reviewed.") meetingType: ReviewedMeeting;
+  @doc("Guest name, trimmed to 1–100 characters.") guestName: string;
+  @doc("Required email, at most 254 characters.") guestEmail: string;
+  @doc("Optional plain-text notes, at most 2000 characters.") notes?: string;
+}
+
+@doc("A persisted confirmation returned only to its creating request; there is no public booking lookup.")
+@example(#{ id: "29a71c26-c842-407d-bcd2-e93c8ea0ceab", meetingName: "Discussion", meetingDescription: "", durationMinutes: 20, hostName: "Alex Morgan", timeZone: "Europe/Berlin", startsAt: utcDateTime.fromISO("2026-11-13T09:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-13T09:20:00Z"), guestName: "Guest", guestEmail: "guest@example.com", notes: "" })
+model Booking {
+  @doc("System identifier, not a public access credential.") id: string;
+  @doc("Saved meeting name.") meetingName: string;
+  @doc("Saved description.") meetingDescription: string;
+  @doc("Saved duration.") durationMinutes: int32;
+  @doc("Fixed calendar owner.") hostName: string;
+  @doc("Fixed display zone.") timeZone: "Europe/Berlin";
+  @doc("Exact saved start.") startsAt: utcDateTime;
+  @doc("Exact saved end.") endsAt: utcDateTime;
+  @doc("Trimmed name.") guestName: string;
+  @doc("Guest email.") guestEmail: string;
+  @doc("Plain-text notes.") notes: string;
+}
+
+@doc("English field validation messages; absent keys have no error.")
+@example(#{ guestName: "Enter your name (1–100 characters)." })
+model GuestErrors {
+  @doc("Name error.") guestName?: string;
+  @doc("Email error.") guestEmail?: string;
+  @doc("Notes error.") notes?: string;
+}
+
+@doc("A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.")
+@example(#{ code: "occupied", message: "This time is no longer available. Please choose another time." })
+model BookingError {
+  @doc("Machine-readable reason.") code: "validation" | "details_changed" | "invalid_interval" | "occupied";
+  @doc("English explanation.") message: string;
+  @doc("Field errors for invalid guest data.") errors?: GuestErrors;
+}
+
+@post
+@route("/meeting-types/{slug}/bookings")
+@tag("Bookings")
+@operationId("confirmBooking")
+@summary("Explicitly confirm a meeting")
+@doc("Atomically rechecks current publication, reviewed details, schedule and shared occupancy. Returns a private creation response with no public read endpoint. All responses are no-store.")
+op confirmBooking(
+  @doc("Current published address.") @path slug: string,
+  @doc("Reviewed meeting, selected instant and guest details.") @body confirmation: BookingConfirmation,
+): {
+  @statusCode statusCode: 201;
+  @body body: Booking;
+} | {
+  @statusCode statusCode: 422;
+  @body body: BookingError;
+} | {
+  @statusCode statusCode: 409;
+  @body body: BookingError;
+} | {
+  @statusCode statusCode: 404;
+  @body body: MeetingTypeUnavailable;
+};
