@@ -20,10 +20,13 @@ mise run dev:status
 mise run dev:stop
 ```
 
-Do not overwrite an existing local configuration with the template. It prints a
-new random password on every invocation. The suggested ports 3101/5101/5501 are
-examples, not automatic allocations. A second worktree must use different ports
-(for example 3102/5102/5502) and its own generated credentials/configuration.
+Do not overwrite an existing local configuration with the template. It prints
+new random database and initial administrator passwords on every invocation.
+The template includes `ADMIN_USERNAME=owner` and `ADMIN_PASSWORD`; Rails provisions
+the single administrator on first login. It includes no default shared password.
+The suggested ports 3101/5101/5501 are examples, not automatic allocations. A
+second worktree must use different ports (for example 3102/5102/5502) and its own
+generated credentials/configuration.
 The same variables may instead be exported in the invoking environment without
 a local config. Secrets and runtime state are ignored by Git.
 
@@ -51,6 +54,7 @@ Compose has no fixed container name or externally shared volume/network.
 | `mise run dev:validate` | Validate configuration and check all three ports are currently free |
 | `mise run db:up` | Start/reuse this checkout's PostgreSQL with the pinned standalone Compose; wait for final TCP health, not the init-only Unix socket (45-second deadline) |
 | `mise run db:prepare` | Run `db:up`, then Rails `db:prepare` separately for development and the explicit test URL |
+| `mise run db:seed` | Create missing initial published meeting types; reruns preserve administrator edits |
 | `mise run dev:start` | Reject occupied application ports, prepare DBs, then start native `mise daemons` backend/frontend under pinned pitchfork |
 | `mise run dev:status` | Show project, ports, Compose and daemon status; include recent logs for unready services; exit nonzero unless all three are ready |
 | `mise run dev:stop` | Stop only the two named daemons in this project and its owned Compose PostgreSQL, retaining containers, networks and volumes |

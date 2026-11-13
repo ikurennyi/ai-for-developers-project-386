@@ -13,7 +13,8 @@ WORKTREE_ID = "wt-#{Digest::SHA256.hexdigest(ROOT)[0, 20]}"
 
 class Services
   KEYS = %w[WORKTREE_ID COMPOSE_PROJECT_NAME BACKEND_PORT FRONTEND_PORT POSTGRES_PORT
-    POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL TEST_DATABASE_URL].freeze
+    POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL TEST_DATABASE_URL
+    ADMIN_USERNAME ADMIN_PASSWORD].freeze
   STATE = File.join(ROOT, ".services")
   CONFIG = File.join(STATE, "environment.json")
 
@@ -90,7 +91,7 @@ class Services
       end
     end
     # Never print credentials from subprocess diagnostics.
-    %w[DATABASE_URL TEST_DATABASE_URL POSTGRES_PASSWORD].each do |key|
+    %w[DATABASE_URL TEST_DATABASE_URL POSTGRES_PASSWORD ADMIN_PASSWORD].each do |key|
       value = @env[key]
       output.gsub!(value, "[REDACTED]") if value && !value.empty?
     end
@@ -185,12 +186,14 @@ class Services
     if command == "dev:env"
       db = "app_#{WORKTREE_ID.tr('-', '_')}"
       password = SecureRandom.hex(24)
+      admin_password = SecureRandom.hex(24)
       puts "# Choose three free ports; these are examples, not reservations.\n[env]"
       values = { "WORKTREE_ID" => WORKTREE_ID, "COMPOSE_PROJECT_NAME" => "scaffold-#{WORKTREE_ID}",
         "BACKEND_PORT" => "3101", "FRONTEND_PORT" => "5101", "POSTGRES_PORT" => "5501",
         "POSTGRES_USER" => "developer", "POSTGRES_PASSWORD" => password, "POSTGRES_DB" => db,
         "DATABASE_URL" => "postgresql://developer:#{password}@127.0.0.1:5501/#{db}",
-        "TEST_DATABASE_URL" => "postgresql://developer:#{password}@127.0.0.1:5501/#{db}_test" }
+        "TEST_DATABASE_URL" => "postgresql://developer:#{password}@127.0.0.1:5501/#{db}_test",
+        "ADMIN_USERNAME" => "owner", "ADMIN_PASSWORD" => admin_password }
       values.each { |key, value| puts "#{key} = #{value.to_json}" }
       return
     end

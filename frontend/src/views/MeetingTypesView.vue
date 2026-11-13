@@ -59,7 +59,6 @@ onMounted(load)
 }
 h1 {
   font-size: clamp(36px, 8vw, 56px);
-  letter-spacing: -1.5px;
 }
 .meeting-type-list {
   list-style: none;
@@ -70,7 +69,6 @@ h1 {
 }
 h2 {
   font-size: 24px;
-  letter-spacing: -0.5px;
   overflow-wrap: anywhere;
 }
 .meeting-description {

@@ -30,6 +30,10 @@ begin
   puts capture(File.join(root, "backend"), env, "bundle", "exec", "ruby", "-rpg", "-e",
     '25.times { PG.connect(ENV.fetch("DATABASE_URL"), connect_timeout: 2) { |db| raise "SQL failed" unless db.exec("SELECT 1").getvalue(0, 0) == "1" }; sleep 0.05 }; puts "Fresh-volume immediate TCP SQL verified"')
   puts capture(root, env, "mise", "run", "db:prepare")
+  puts capture(root, env, "mise", "run", "db:seed")
+  puts capture(root, env, "mise", "run", "db:seed")
+  puts capture(File.join(root, "backend"), env, "bundle", "exec", "rails", "runner",
+    'abort "initial published meeting types are missing or duplicated" unless MeetingType.where(published: true).count == 2 && MeetingType.count == 2')
 ensure
   puts capture(root, env, "mise", "run", "dev:stop") if File.exist?(state)
 end

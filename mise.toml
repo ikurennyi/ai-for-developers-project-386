@@ -42,6 +42,11 @@ run = "ruby scripts/services.rb db:up"
 [tasks."db:prepare"]
 run = "ruby scripts/services.rb db:prepare"
 
+[tasks."db:seed"]
+description = "Create missing initial published meeting types without overwriting edits"
+dir = "backend"
+run = "bundle exec rails db:seed"
+
 [tasks."dev:start"]
 run = "ruby scripts/services.rb dev:start"
 

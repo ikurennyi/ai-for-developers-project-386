@@ -128,7 +128,6 @@ a {
 .brand {
   font-size: 21px;
   font-weight: 750;
-  letter-spacing: -0.8px;
 }
 .site-header nav {
   display: flex;
@@ -168,7 +167,6 @@ a {
   color: #218477;
   font-size: 12px;
   font-weight: 750;
-  letter-spacing: 1.4px;
   text-transform: uppercase;
 }
 h1 {
@@ -176,7 +174,6 @@ h1 {
   margin: 0;
   font-size: clamp(48px, 6vw, 76px);
   line-height: 1.02;
-  letter-spacing: -4.5px;
   font-weight: 720;
 }
 .hero-description {
@@ -257,7 +254,6 @@ h1 {
 .calendar-dots {
   margin-left: auto;
   color: #9ca8a2;
-  letter-spacing: 2px;
 }
 .calendar-month {
   margin: 23px 0 13px;
@@ -353,7 +349,6 @@ h1 {
 h2 {
   margin: 0;
   font-size: 35px;
-  letter-spacing: -1.4px;
 }
 .feature-list {
   display: grid;
@@ -371,14 +366,12 @@ h2 {
   color: #278679;
   font-size: 11px;
   font-weight: 750;
-  letter-spacing: 1px;
 }
 .feature-card h3 {
   max-width: 280px;
   margin: 18px 0 9px;
   font-size: 17px;
   line-height: 1.35;
-  letter-spacing: -0.3px;
 }
 .feature-card p {
   margin: 0;
@@ -424,7 +417,6 @@ h2 {
   h1 {
     max-width: 480px;
     font-size: clamp(47px, 12vw, 66px);
-    letter-spacing: -3px;
   }
   .hero-description {
     font-size: 16px;
