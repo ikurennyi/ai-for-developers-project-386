@@ -156,8 +156,12 @@ Earlier baseline verification is not substituted for a run of these changes.
   “duplicate tab” cloning of complete session history is not claimed.
 - There is no claim of exhaustive malformed JSON/media fuzzing, every assistive
   technology/device, or a public production deployment.
-- Supplied external status: main release-please rerun succeeded; release PR #40
-  was created and its CI was running. No release/tag exists yet. #37 remains open
+- Verified external status: main release-please rerun succeeded; release PR #40
+  was created and all three checks passed (`gh pr checks 40`, 2026-11-13):
+  [Application push](https://github.com/ikurennyi/ai-for-developers-project-386/actions/runs/43466728575),
+  [Application PR](https://github.com/ikurennyi/ai-for-developers-project-386/actions/runs/43466738931),
+  [Hexlet](https://github.com/ikurennyi/ai-for-developers-project-386/actions/runs/43466728551).
+  No release/tag exists yet. #37 remains open
   and blocks #38; this follow-up does not start, claim or close #38.
 - No push, PR, merge to main, tracker mutation, protected Hexlet workflow change,
   original-checkout edit, subagent or external secret/provisioning action.
