@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
 import { chromium } from 'playwright'
+import { checkAdminHome } from './admin-home.mjs'
 
 const browser = await chromium.launch({ headless: true })
 try {
-  const context = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] })
+  const context = await browser.newContext({
+    permissions: ['clipboard-read', 'clipboard-write'],
+    timezoneId: 'America/Los_Angeles',
+  })
   const page = await context.newPage()
   page.setDefaultTimeout(10000)
   const origin = process.env.APP_ORIGIN
@@ -144,6 +148,7 @@ try {
   console.log(
     'Meeting type editing, separate publication/hiding/republishing and current copied link passed.',
   )
+  await checkAdminHome(page, context, origin)
 } finally {
   await browser.close()
 }

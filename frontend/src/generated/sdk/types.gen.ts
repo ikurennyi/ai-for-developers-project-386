@@ -5,6 +5,36 @@ export type ClientOptions = {
 };
 
 /**
+ * All ongoing and future bookings, without a creation-window limit or pagination.
+ */
+export type AdminHome = {
+    /**
+     * Fixed display zone.
+     */
+    timeZone: 'Europe/Berlin';
+    /**
+     * Berlin days ascending; empty when no booking has an end strictly after server now.
+     */
+    days: Array<AdminHomeDay>;
+    [key: string]: unknown;
+};
+
+/**
+ * Unfinished bookings sharing a start date in Europe/Berlin.
+ */
+export type AdminHomeDay = {
+    /**
+     * Berlin start date.
+     */
+    date: string;
+    /**
+     * Saved bookings ordered by start ascending, then identifier.
+     */
+    bookings: Array<Booking>;
+    [key: string]: unknown;
+};
+
+/**
  * An administrator-visible offer, including hidden drafts.
  */
 export type AdminMeetingType = {
@@ -411,6 +441,31 @@ export type ReviewedMeeting = {
     durationMinutes: number;
     [key: string]: unknown;
 };
+
+export type GetAdminHomeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/home';
+};
+
+export type GetAdminHomeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+};
+
+export type GetAdminHomeError = GetAdminHomeErrors[keyof GetAdminHomeErrors];
+
+export type GetAdminHomeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminHome;
+};
+
+export type GetAdminHomeResponse = GetAdminHomeResponses[keyof GetAdminHomeResponses];
 
 export type ListAdminMeetingTypesData = {
     body?: never;

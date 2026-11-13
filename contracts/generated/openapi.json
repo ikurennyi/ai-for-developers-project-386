@@ -13,6 +13,9 @@
       "name": "Meeting types"
     },
     {
+      "name": "Administrator Home"
+    },
+    {
       "name": "Bookings"
     },
     {
@@ -23,6 +26,44 @@
     }
   ],
   "paths": {
+    "/admin/home": {
+      "get": {
+        "operationId": "getAdminHome",
+        "summary": "Read all unfinished bookings grouped by Berlin day",
+        "description": "Requires administrator access. Includes ongoing bookings and every future booking, including hidden types and dates beyond the creation window. End equal to server now is excluded. Returns saved snapshots and full plain-text guest details. Responses are no-store.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHome"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator Home"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/admin/meeting-types": {
       "get": {
         "operationId": "listAdminMeetingTypes",
@@ -810,6 +851,70 @@
   },
   "components": {
     "schemas": {
+      "AdminHome": {
+        "type": "object",
+        "required": [
+          "timeZone",
+          "days"
+        ],
+        "properties": {
+          "timeZone": {
+            "type": "string",
+            "enum": [
+              "Europe/Berlin"
+            ],
+            "description": "Fixed display zone.",
+            "example": "Europe/Berlin"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminHomeDay"
+            },
+            "description": "Berlin days ascending; empty when no booking has an end strictly after server now.",
+            "example": []
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "All ongoing and future bookings, without a creation-window limit or pagination.",
+        "example": {
+          "timeZone": "Europe/Berlin",
+          "days": []
+        }
+      },
+      "AdminHomeDay": {
+        "type": "object",
+        "required": [
+          "date",
+          "bookings"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Berlin start date.",
+            "example": "2026-11-13"
+          },
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            },
+            "description": "Saved bookings ordered by start ascending, then identifier.",
+            "example": []
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Unfinished bookings sharing a start date in Europe/Berlin.",
+        "example": {
+          "date": "2026-11-13",
+          "bookings": []
+        }
+      },
       "AdminMeetingType": {
         "type": "object",
         "required": [

@@ -403,6 +403,31 @@ model Booking {
   @doc("Plain-text notes.") notes: string;
 }
 
+@doc("Unfinished bookings sharing a start date in Europe/Berlin.")
+@example(#{ date: plainDate.fromISO("2026-11-13"), bookings: #[] })
+model AdminHomeDay {
+  @doc("Berlin start date.") @example(plainDate.fromISO("2026-11-13")) date: plainDate;
+  @doc("Saved bookings ordered by start ascending, then identifier.") @example(#[]) bookings: Booking[];
+}
+
+@doc("All ongoing and future bookings, without a creation-window limit or pagination.")
+@example(#{ timeZone: "Europe/Berlin", days: #[] })
+model AdminHome {
+  @doc("Fixed display zone.") @example("Europe/Berlin") timeZone: "Europe/Berlin";
+  @doc("Berlin days ascending; empty when no booking has an end strictly after server now.")
+  @example(#[])
+  days: AdminHomeDay[];
+}
+
+@get
+@route("/admin/home")
+@tag("Administrator Home")
+@useAuth(AdminCookie)
+@operationId("getAdminHome")
+@summary("Read all unfinished bookings grouped by Berlin day")
+@doc("Requires administrator access. Includes ongoing bookings and every future booking, including hidden types and dates beyond the creation window. End equal to server now is excluded. Returns saved snapshots and full plain-text guest details. Responses are no-store.")
+op getAdminHome(): AdminHome | Unauthenticated;
+
 @doc("English field validation messages; absent keys have no error.")
 @example(#{ guestName: "Enter your name (1–100 characters)." })
 model GuestErrors {
