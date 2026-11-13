@@ -1,47 +1,37 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 
-import { flushPromises, mount } from '@vue/test-utils'
+import { mount } from '@vue/test-utils'
 import App from '../App.vue'
 import router from '../router'
 
-describe('Technical page', () => {
+describe('Home page', () => {
   afterEach(() => vi.unstubAllGlobals())
-  it('opens the root route with a technical heading', async () => {
+
+  it('explains the service and its features in English', async () => {
     await router.push('/')
     await router.isReady()
     const wrapper = mount(App, { global: { plugins: [router] } })
 
-    expect(wrapper.get('h1').text()).toBe('Calendar — technical scaffold')
-    wrapper.unmount()
-  })
-
-  it('shows loading rather than claiming API success before a response', async () => {
-    await router.push('/')
-    await router.isReady()
-    const wrapper = mount(App, { global: { plugins: [router] } })
-
-    expect(wrapper.get('[role="alert"]').text()).toContain('Checking API')
-    wrapper.unmount()
-  })
-
-  it('reports an unavailable API without claiming success', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Network unavailable')))
-    const NativeRequest = globalThis.Request
-    vi.stubGlobal(
-      'Request',
-      class extends NativeRequest {
-        constructor(input: RequestInfo | URL, init?: RequestInit) {
-          super(typeof input === 'string' ? new URL(input, 'http://localhost') : input, init)
-        }
-      },
+    expect(wrapper.get('h1').text()).toBe('Book a call in minutes')
+    expect(wrapper.text()).toContain(
+      'Book a meeting in a minute: choose an event type and a time that works for you.',
     )
+    expect(wrapper.text()).toContain('Features')
+    expect(wrapper.text()).toContain('Choose an event type and a convenient time')
+    expect(wrapper.text()).toContain('Book quickly')
+    expect(wrapper.text()).toContain('Manage meeting types')
+    wrapper.unmount()
+  })
+
+  it('links the header and main call to action to booking and admin', async () => {
     await router.push('/')
     await router.isReady()
     const wrapper = mount(App, { global: { plugins: [router] } })
-    await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('API unavailable')
-    expect(fetch).toHaveBeenCalledOnce()
+    expect(wrapper.get('header a[aria-label="Calendar home"]').text()).toBe('Calendar')
+    expect(wrapper.get('header a[href="/book"]').text()).toBe('Book')
+    expect(wrapper.get('header a[href="/admin"]').text()).toBe('Admin')
+    expect(wrapper.get('main a[href="/book"]').text()).toBe('Book now →')
     wrapper.unmount()
   })
 })
