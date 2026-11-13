@@ -349,6 +349,17 @@ export type MeetingTypeList = {
 };
 
 /**
+ * Explicit desired publication state; saving details never changes this state.
+ */
+export type MeetingTypePublication = {
+    /**
+     * Publish for new bookings, or hide without changing existing bookings or occupancy.
+     */
+    published: boolean;
+    [key: string]: unknown;
+};
+
+/**
  * Indistinguishable response for hidden and nonexistent meeting types.
  */
 export type MeetingTypeUnavailable = {
@@ -477,6 +488,162 @@ export type CreateAdminMeetingTypeResponses = {
 };
 
 export type CreateAdminMeetingTypeResponse = CreateAdminMeetingTypeResponses[keyof CreateAdminMeetingTypeResponses];
+
+export type GetAdminMeetingTypeData = {
+    body?: never;
+    path: {
+        /**
+         * Immutable system-assigned identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/meeting-types/{id}';
+};
+
+export type GetAdminMeetingTypeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The administrative meeting type does not exist.
+     */
+    404: AuthError;
+};
+
+export type GetAdminMeetingTypeError = GetAdminMeetingTypeErrors[keyof GetAdminMeetingTypeErrors];
+
+export type GetAdminMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingType;
+};
+
+export type GetAdminMeetingTypeResponse = GetAdminMeetingTypeResponses[keyof GetAdminMeetingTypeResponses];
+
+export type UpdateAdminMeetingTypeData = {
+    /**
+     * Complete editable details; omitted description is empty.
+     */
+    body: NewMeetingType;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path: {
+        /**
+         * Immutable system-assigned identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/meeting-types/{id}';
+};
+
+export type UpdateAdminMeetingTypeErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The administrative meeting type does not exist.
+     */
+    404: AuthError;
+    /**
+     * The offer was not saved; preserve the form and correct these fields.
+     */
+    422: {
+        /**
+         * Safe English summary.
+         */
+        message: string;
+        /**
+         * Errors beside the relevant fields.
+         */
+        errors: MeetingTypeFieldErrors;
+        [key: string]: unknown;
+    };
+};
+
+export type UpdateAdminMeetingTypeError = UpdateAdminMeetingTypeErrors[keyof UpdateAdminMeetingTypeErrors];
+
+export type UpdateAdminMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingType;
+};
+
+export type UpdateAdminMeetingTypeResponse = UpdateAdminMeetingTypeResponses[keyof UpdateAdminMeetingTypeResponses];
+
+export type SetAdminMeetingTypePublicationData = {
+    /**
+     * Explicit desired state.
+     */
+    body: MeetingTypePublication;
+    headers: {
+        /**
+         * Required mutation protection header.
+         */
+        'X-Calendar-Request': '1';
+    };
+    path: {
+        /**
+         * Immutable system-assigned identifier.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/admin/meeting-types/{id}/publication';
+};
+
+export type SetAdminMeetingTypePublicationErrors = {
+    /**
+     * No valid administrator session.
+     */
+    401: AuthError;
+    /**
+     * The browser request failed same-origin protection.
+     */
+    403: AuthError;
+    /**
+     * The administrative meeting type does not exist.
+     */
+    404: AuthError;
+    /**
+     * The offer was not saved; preserve the form and correct these fields.
+     */
+    422: {
+        /**
+         * Safe English summary.
+         */
+        message: string;
+        /**
+         * Errors beside the relevant fields.
+         */
+        errors: MeetingTypeFieldErrors;
+        [key: string]: unknown;
+    };
+};
+
+export type SetAdminMeetingTypePublicationError = SetAdminMeetingTypePublicationErrors[keyof SetAdminMeetingTypePublicationErrors];
+
+export type SetAdminMeetingTypePublicationResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingType;
+};
+
+export type SetAdminMeetingTypePublicationResponse = SetAdminMeetingTypePublicationResponses[keyof SetAdminMeetingTypePublicationResponses];
 
 export type LogoutAdminData = {
     body?: never;

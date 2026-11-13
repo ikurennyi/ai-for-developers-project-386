@@ -168,6 +168,318 @@
         ]
       }
     },
+    "/admin/meeting-types/{id}": {
+      "get": {
+        "operationId": "getAdminMeetingType",
+        "summary": "Read meeting type details for editing",
+        "description": "Requires administrator access; hidden offers are included. Responses are not cacheable.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Immutable system-assigned identifier.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The administrative meeting type does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateAdminMeetingType",
+        "summary": "Save meeting type details without changing publication",
+        "description": "Uses creation validation. Identity is immutable. A changed address immediately releases the old address without redirecting it. Existing booking snapshots and occupancy are unchanged.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Immutable system-assigned identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The administrative meeting type does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The offer was not saved; preserve the form and correct these fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Safe English summary.",
+                      "example": "Please correct the highlighted fields."
+                    },
+                    "errors": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/MeetingTypeFieldErrors"
+                        }
+                      ],
+                      "description": "Errors beside the relevant fields.",
+                      "example": {
+                        "slug": [
+                          "has already been taken"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "errors"
+                  ],
+                  "additionalProperties": {
+                    "not": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMeetingType"
+              }
+            }
+          },
+          "description": "Complete editable details; omitted description is empty."
+        },
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
+    "/admin/meeting-types/{id}/publication": {
+      "put": {
+        "operationId": "setAdminMeetingTypePublication",
+        "summary": "Publish, hide or republish a meeting type",
+        "description": "Explicit idempotent state change, separate from Save. Hiding prevents new bookings but preserves existing snapshots and occupancy. Only successful responses confirm the new state.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Immutable system-assigned identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The administrative meeting type does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The offer was not saved; preserve the form and correct these fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Safe English summary.",
+                      "example": "Please correct the highlighted fields."
+                    },
+                    "errors": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/MeetingTypeFieldErrors"
+                        }
+                      ],
+                      "description": "Errors beside the relevant fields.",
+                      "example": {
+                        "slug": [
+                          "has already been taken"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "errors"
+                  ],
+                  "additionalProperties": {
+                    "not": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator meeting types"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingTypePublication"
+              }
+            }
+          },
+          "description": "Explicit desired state."
+        },
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/admin/session": {
       "post": {
         "operationId": "loginAdmin",
@@ -1170,6 +1482,25 @@
         "description": "The available public meeting offers.",
         "example": {
           "meetingTypes": []
+        }
+      },
+      "MeetingTypePublication": {
+        "type": "object",
+        "required": [
+          "published"
+        ],
+        "properties": {
+          "published": {
+            "type": "boolean",
+            "description": "Publish for new bookings, or hide without changing existing bookings or occupancy."
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Explicit desired publication state; saving details never changes this state.",
+        "example": {
+          "published": true
         }
       },
       "MeetingTypeUnavailable": {

@@ -1,4 +1,4 @@
-import { confirmBooking, getAvailability, getHealth, loginAdmin, getAdminSession, logoutAdmin, listMeetingTypes, listAdminMeetingTypes, createAdminMeetingType, type Availability, type Booking, type Health, type MeetingType } from './sdk';
+import { confirmBooking, getAvailability, getHealth, loginAdmin, getAdminSession, logoutAdmin, listMeetingTypes, listAdminMeetingTypes, createAdminMeetingType, getAdminMeetingType, updateAdminMeetingType, setAdminMeetingTypePublication, type Availability, type Booking, type Health, type MeetingType } from './sdk';
 
 // Consumer-level checks: generated types preserve the literal health response.
 const healthy: Health = { status: 'ok' };
@@ -46,6 +46,25 @@ async function createHiddenMeetingType() {
   return { published, types: types.data.meetingTypes };
 }
 void createHiddenMeetingType;
+
+async function manageMeetingType(id: string) {
+  const current = await getAdminMeetingType({ path: { id }, throwOnError: true });
+  const updated = await updateAdminMeetingType({
+    path: { id },
+    headers: { 'X-Calendar-Request': '1' },
+    body: { name: current.data.name, description: '', durationMinutes: 45, slug: 'updated' },
+    throwOnError: true,
+  });
+  const publication = await setAdminMeetingTypePublication({
+    path: { id },
+    headers: { 'X-Calendar-Request': '1' },
+    body: { published: true },
+    throwOnError: true,
+  });
+  const published: boolean = publication.data.published;
+  return { slug: updated.data.slug, published };
+}
+void manageMeetingType;
 
 async function readCalendar(): Promise<Availability> {
   const response = await getAvailability({ path: { slug: 'discussion' }, throwOnError: true });

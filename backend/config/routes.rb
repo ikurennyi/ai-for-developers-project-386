@@ -2,7 +2,9 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       namespace :admin do
-        resources :meeting_types, path: "meeting-types", only: [ :index, :create ]
+        resources :meeting_types, path: "meeting-types", only: [ :index, :create, :show, :update ] do
+          put :publication, on: :member
+        end
         resource :session, only: [ :show, :create, :destroy ], controller: :sessions
       end
     end

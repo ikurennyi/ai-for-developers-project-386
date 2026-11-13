@@ -241,6 +241,53 @@ interface AdminMeetingTypes {
   } | InvalidMeetingType | Unauthenticated | Forbidden;
 }
 
+@error
+@doc("The administrative meeting type does not exist.")
+model AdminMeetingTypeNotFound {
+  @statusCode statusCode: 404;
+  @body body: AuthError;
+}
+
+@doc("Explicit desired publication state; saving details never changes this state.")
+@example(#{ published: true })
+model MeetingTypePublication {
+  @doc("Publish for new bookings, or hide without changing existing bookings or occupancy.")
+  published: boolean;
+}
+
+@route("/admin/meeting-types/{id}")
+@tag("Administrator meeting types")
+@useAuth(AdminCookie)
+interface ManageMeetingType {
+  @get
+  @operationId("getAdminMeetingType")
+  @summary("Read meeting type details for editing")
+  @doc("Requires administrator access; hidden offers are included. Responses are not cacheable.")
+  read(@doc("Immutable system-assigned identifier.") @path id: string):
+    AdminMeetingType | AdminMeetingTypeNotFound | Unauthenticated;
+
+  @put
+  @operationId("updateAdminMeetingType")
+  @summary("Save meeting type details without changing publication")
+  @doc("Uses creation validation. Identity is immutable. A changed address immediately releases the old address without redirecting it. Existing booking snapshots and occupancy are unchanged.")
+  update(
+    @doc("Immutable system-assigned identifier.") @path id: string,
+    @doc("Required mutation protection header.") @header("X-Calendar-Request") calendarRequest: "1",
+    @doc("Complete editable details; omitted description is empty.") @body body: NewMeetingType
+  ): AdminMeetingType | InvalidMeetingType | AdminMeetingTypeNotFound | Unauthenticated | Forbidden;
+
+  @put
+  @route("/publication")
+  @operationId("setAdminMeetingTypePublication")
+  @summary("Publish, hide or republish a meeting type")
+  @doc("Explicit idempotent state change, separate from Save. Hiding prevents new bookings but preserves existing snapshots and occupancy. Only successful responses confirm the new state.")
+  publication(
+    @doc("Immutable system-assigned identifier.") @path id: string,
+    @doc("Required mutation protection header.") @header("X-Calendar-Request") calendarRequest: "1",
+    @doc("Explicit desired state.") @body body: MeetingTypePublication
+  ): AdminMeetingType | InvalidMeetingType | AdminMeetingTypeNotFound | Unauthenticated | Forbidden;
+}
+
 @doc("A schedule-valid interval. Availability is advisory and never reserves time.")
 @example(#{ startsAt: utcDateTime.fromISO("2026-11-13T13:15:00Z"), endsAt: utcDateTime.fromISO("2026-11-13T13:35:00Z"), available: true })
 model CalendarInterval {

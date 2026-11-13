@@ -1,17 +1,27 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { onBeforeRouteLeave, RouterLink, useRouter } from 'vue-router'
-import { createAdminMeetingType, type MeetingTypeFieldErrors } from '../generated/sdk'
+import { onBeforeRouteLeave, RouterLink, useRoute, useRouter } from 'vue-router'
+import {
+  createAdminMeetingType,
+  getAdminMeetingType,
+  updateAdminMeetingType,
+  type MeetingTypeFieldErrors,
+} from '../generated/sdk'
 import { adminRequestHeaders, requireAdminLogin } from '../admin/session'
 
 const router = useRouter()
-const draftKey = 'calendar-new-meeting-type'
+const route = useRoute()
+const id = typeof route.params.id === 'string' ? route.params.id : ''
+const editing = !!id
+const draftKey = editing ? `calendar-edit-meeting-type-${id}` : 'calendar-new-meeting-type'
 const initial = { name: '', description: '', duration: '', slug: '' }
 const form = reactive({ ...initial })
 const dirty = computed(() => JSON.stringify(form) !== JSON.stringify(initial))
 const errors = ref<MeetingTypeFieldErrors>({})
 const error = ref('')
 const pending = ref(false)
+const loading = ref(editing)
+const loadError = ref('')
 let saved = false
 
 function length(value: string) {
@@ -39,7 +49,7 @@ async function save() {
   if (Object.keys(errors.value).length) return
   pending.value = true
   try {
-    const result = await createAdminMeetingType({
+    const options = {
       headers: adminRequestHeaders,
       body: {
         name: form.name,
@@ -47,7 +57,10 @@ async function save() {
         durationMinutes: Number(form.duration),
         slug: form.slug,
       },
-    })
+    }
+    const result = editing
+      ? await updateAdminMeetingType({ ...options, path: { id } })
+      : await createAdminMeetingType(options)
     if (result.response?.status === 401) return await requireAdminLogin(router)
     if (!result.response) throw new Error('Save result unavailable')
     if (result.error) {
@@ -89,7 +102,29 @@ onBeforeRouteLeave((to) => {
 function beforeUnload(event: BeforeUnloadEvent) {
   if (dirty.value && !saved) event.preventDefault()
 }
-onMounted(() => {
+async function load() {
+  loading.value = true
+  loadError.value = ''
+  try {
+    const result = await getAdminMeetingType({ path: { id } })
+    if (result.response?.status === 401) return await requireAdminLogin(router)
+    if (!result.data) throw new Error('Meeting type unavailable')
+    Object.assign(initial, {
+      name: result.data.name,
+      description: result.data.description,
+      duration: String(result.data.durationMinutes),
+      slug: result.data.slug,
+    })
+    Object.assign(form, initial)
+  } catch {
+    loadError.value = 'Unable to load the meeting type. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {
+  if (editing) await load()
   const stored = sessionStorage.getItem(draftKey)
   if (stored) {
     try {
@@ -111,9 +146,16 @@ onUnmounted(() => window.removeEventListener('beforeunload', beforeUnload))
 
 <template>
   <section>
-    <h1>New meeting type</h1>
-    <p>Save creates a hidden meeting type. It does not publish it.</p>
-    <form novalidate @submit.prevent="save">
+    <h1>{{ editing ? 'Edit meeting type' : 'New meeting type' }}</h1>
+    <p v-if="editing">Save changes details only. Publication is managed separately in Links.</p>
+    <p v-else>Save creates a hidden meeting type. It does not publish it.</p>
+    <p v-if="loading" role="status">Loading meeting type…</p>
+    <div v-else-if="loadError" role="alert">
+      <p>{{ loadError }}</p>
+      <button @click="load">Retry</button>
+      <RouterLink to="/admin/links">Back to Links</RouterLink>
+    </div>
+    <form v-else novalidate @submit.prevent="save">
       <label for="meeting-name">Name</label>
       <input
         id="meeting-name"
