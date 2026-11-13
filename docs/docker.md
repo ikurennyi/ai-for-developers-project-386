@@ -150,6 +150,10 @@ external GitHub Actions, a public deployment, or completion of parent #22.
   lifecycle command. Private configuration remained authoritative and all
   persistence/rotation checks passed. Its stopped, retained export is
   `.services/docker-clean-ed1b8d8bc043`.
+- After integration `40e855c` (booking conflict recovery), clean commit `0e943dd`
+  passed the same complete Docker acceptance on port 8469, project
+  `calendar-5040a62755f0bfe7e22a`; stopped data/configuration are retained in
+  `.services/docker-clean-abd4550c0a84`.
 - The earliest pre-hardening test stack had inherited a caller database password
   before private-file precedence was added. A later full restart exposed that
   mismatch. Only that dedicated database's role password was reconciled with its
