@@ -182,6 +182,8 @@ class Smoke
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("create-meeting-type", "node", "e2e/create-meeting-type.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("home-fixtures", "bundle", "exec", "rails", "runner", File.join(ROOT, "test/fixtures/admin_home.rb"),
+      directory: backend)
     puts command("manage-meeting-types", "node", "e2e/manage-meeting-types.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("calendar-navigation", "node", "e2e/calendar-navigation.mjs",
