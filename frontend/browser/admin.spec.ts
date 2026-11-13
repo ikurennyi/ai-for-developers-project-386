@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils'
-import { expect, it } from 'vitest'
+import { expect, inject, it } from 'vitest'
 import App from '../src/App.vue'
 import router from '../src/router'
 import 'element-plus/dist/index.css'
@@ -22,6 +22,12 @@ it('returns to a protected page, survives a fresh mount, and logs out', async ()
     wrapper = mount(App, { attachTo: document.body, global: { plugins: [router] } })
     await flushPromises()
     expect(wrapper.get('h1').text()).toBe('Home')
+    const expectedHomeText =
+      inject('occupiedCalendar') || inject('emptyMeetingTypes')
+        ? 'No unfinished bookings.'
+        : 'Unfinished bookings'
+    await expect.poll(() => wrapper.text()).toContain(expectedHomeText)
+    expect(wrapper.text()).toContain('Europe/Berlin')
     await wrapper.get('button[data-test="logout"]').trigger('click')
     await expect.poll(() => router.currentRoute.value.path).toBe('/admin/login')
     await router.push('/admin/bookings')
