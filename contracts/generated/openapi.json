@@ -104,6 +104,89 @@
         ]
       }
     },
+    "/admin/bookings/{id}": {
+      "delete": {
+        "operationId": "deleteAdminBooking",
+        "summary": "Permanently delete a booking",
+        "description": "Requires explicit administrator confirmation and same-origin protection. Atomically removes the booking and its shared occupancy; failures change neither. No trash, restoration or cancellation status. Freed time remains subject to schedule, current time, window and other occupancy.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Saved booking identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required mutation protection header.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. "
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator bookings"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/admin/home": {
       "get": {
         "operationId": "getAdminHome",
@@ -856,7 +939,7 @@
       "post": {
         "operationId": "confirmBooking",
         "summary": "Explicitly confirm a meeting",
-        "description": "Atomically rechecks current publication, reviewed details, schedule and shared occupancy. Returns a private creation response with no public read endpoint. All responses are no-store.",
+        "description": "Atomically rechecks current publication, reviewed details, Berlin date window, strictly future start, schedule and shared occupancy, including after lock waits. Hidden types return unavailable and must offer meeting selection. Changed terms are rejected without booking; review current availability before explicitly confirming again. Returns a private creation response with no public read endpoint. All responses are no-store.",
         "parameters": [
           {
             "name": "slug",
@@ -1460,7 +1543,7 @@
         "additionalProperties": {
           "not": {}
         },
-        "description": "A rejected confirmation. Codes distinguish changed terms, invalid schedule and shared occupancy.",
+        "description": "A rejected confirmation. occupied and invalid_interval require refreshed availability and a cleared time, retaining the date and guest draft without substitution. details_changed requires current name, description and duration to be displayed and a fresh explicit confirmation; never automatically resubmit.",
         "example": {
           "code": "occupied",
           "message": "This time is no longer available. Please choose another time."
