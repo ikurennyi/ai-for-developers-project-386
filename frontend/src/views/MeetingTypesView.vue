@@ -45,6 +45,7 @@ onMounted(load)
           <h2>{{ meetingType.name }}</h2>
           <p class="meeting-description">{{ meetingType.description }}</p>
           <p>{{ meetingType.durationMinutes }} minutes</p>
+          <RouterLink :to="`/book/${meetingType.slug}`">Choose a time →</RouterLink>
         </article>
       </li>
     </ul>

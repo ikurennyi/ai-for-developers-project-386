@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesResponses } from './types.gen';
+import type { GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -31,3 +31,10 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  * Return every published offer. Hidden offers are never included.
  */
 export const listMeetingTypes = <ThrowOnError extends boolean = false>(options?: Options<ListMeetingTypesData, ThrowOnError>): RequestResult<ListMeetingTypesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListMeetingTypesResponses, unknown, ThrowOnError>({ url: '/meeting-types', ...options });
+
+/**
+ * Get a public meeting calendar
+ *
+ * Return fourteen Berlin dates with advisory shared availability. Reading never creates a booking or reserves an interval.
+ */
+export const getAvailability = <ThrowOnError extends boolean = false>(options: Options<GetAvailabilityData, ThrowOnError>): RequestResult<GetAvailabilityResponses, GetAvailabilityErrors, ThrowOnError> => (options.client ?? client).get<GetAvailabilityResponses, GetAvailabilityErrors, ThrowOnError>({ url: '/meeting-types/{slug}/availability', ...options });

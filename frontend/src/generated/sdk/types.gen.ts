@@ -5,6 +5,79 @@ export type ClientOptions = {
 };
 
 /**
+ * Public calendar snapshot calculated using server time, without guest or occupancy details.
+ */
+export type Availability = {
+    /**
+     * The current published offer.
+     */
+    meetingType: MeetingType;
+    /**
+     * Predetermined public host name, never an email address.
+     */
+    hostName: string;
+    /**
+     * The fixed schedule and display time zone.
+     */
+    timeZone: 'Europe/Berlin';
+    /**
+     * Server instant used to calculate this snapshot.
+     */
+    serverNow: string;
+    /**
+     * Today's Berlin date.
+     */
+    today: string;
+    /**
+     * Inclusive last Berlin date: today plus thirteen calendar dates.
+     */
+    windowEnd: string;
+    /**
+     * All fourteen dates, including weekends.
+     */
+    days: Array<CalendarDay>;
+    [key: string]: unknown;
+};
+
+/**
+ * A Berlin calendar date in the booking window.
+ */
+export type CalendarDay = {
+    /**
+     * ISO local date in Europe/Berlin.
+     */
+    date: string;
+    /**
+     * Monday through Friday; weekends still count toward the window.
+     */
+    workingDay: boolean;
+    /**
+     * Schedule-valid intervals, empty on weekends.
+     */
+    intervals: Array<CalendarInterval>;
+    [key: string]: unknown;
+};
+
+/**
+ * A schedule-valid interval. Availability is advisory and never reserves time.
+ */
+export type CalendarInterval = {
+    /**
+     * Exact start instant on the Berlin quarter-hour grid.
+     */
+    startsAt: string;
+    /**
+     * Exact end instant, including the full meeting duration.
+     */
+    endsAt: string;
+    /**
+     * True only for future intervals without shared occupancy.
+     */
+    available: boolean;
+    [key: string]: unknown;
+};
+
+/**
  * API process health; does not imply database readiness.
  */
 export type Health = {
@@ -53,6 +126,17 @@ export type MeetingTypeList = {
     [key: string]: unknown;
 };
 
+/**
+ * Indistinguishable response for hidden and nonexistent meeting types.
+ */
+export type MeetingTypeUnavailable = {
+    /**
+     * Safe public explanation.
+     */
+    message: 'Meeting type unavailable';
+    [key: string]: unknown;
+};
+
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -84,3 +168,33 @@ export type ListMeetingTypesResponses = {
 };
 
 export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];
+
+export type GetAvailabilityData = {
+    body?: never;
+    path: {
+        /**
+         * Current public address segment.
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/meeting-types/{slug}/availability';
+};
+
+export type GetAvailabilityErrors = {
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: MeetingTypeUnavailable;
+};
+
+export type GetAvailabilityError = GetAvailabilityErrors[keyof GetAvailabilityErrors];
+
+export type GetAvailabilityResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Availability;
+};
+
+export type GetAvailabilityResponse = GetAvailabilityResponses[keyof GetAvailabilityResponses];
