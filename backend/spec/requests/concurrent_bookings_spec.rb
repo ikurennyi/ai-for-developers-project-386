@@ -69,42 +69,45 @@ RSpec.describe "Concurrent booking HTTP requests", type: :request do
     threads&.each { |thread| thread.join(15) }
   end
 
-  it "rolls back both records if an insert wait reaches the selected start before confirmation commits" do
-    thread = nil
-    pid = Queue.new
-    ActiveRecord::Base.connection_pool.with_connection do |blocker|
-      blocker.transaction do
-        blocker.execute("LOCK TABLE occupancies IN SHARE MODE")
-        thread = Thread.new do
-          ActiveRecord::Base.connection_pool.with_connection do |connection|
-            pid << connection.select_value("SELECT pg_backend_pid()")
-            session = ActionDispatch::Integration::Session.new(Rails.application)
-            session.post "/api/v1/meeting-types/#{@types.first.slug}/bookings",
-              params: confirmation(@types.first, "09:00"), as: :json
-            [ session.response.status, JSON.parse(session.response.body) ]
+  [ "2026-11-13T09:00:00Z", "2026-11-13T23:00:00Z" ].each do |commit_time|
+    it "rolls back both records if an insert wait reaches #{commit_time} before confirmation commits" do
+      thread = nil
+      pid = Queue.new
+      ActiveRecord::Base.connection_pool.with_connection do |blocker|
+        blocker.transaction do
+          blocker.execute("LOCK TABLE occupancies IN SHARE MODE")
+          thread = Thread.new do
+            ActiveRecord::Base.connection_pool.with_connection do |connection|
+              pid << connection.select_value("SELECT pg_backend_pid()")
+              session = ActionDispatch::Integration::Session.new(Rails.application)
+              session.post "/api/v1/meeting-types/#{@types.first.slug}/bookings",
+                params: confirmation(@types.first, "09:00"), as: :json
+              OpenapiContract.validate!(session.request, session.response)
+              [ session.response.status, JSON.parse(session.response.body) ]
+            end
           end
-        end
-        connection = Timeout.timeout(10) { pid.pop }
-        Timeout.timeout(10) do
-          loop do
-            blocker.execute("SELECT pg_stat_clear_snapshot()")
-            break if blocker.select_value(<<~SQL) == 1
-              SELECT count(*) FROM pg_stat_activity WHERE pid = #{Integer(connection)}
-                AND wait_event_type = 'Lock' AND query LIKE 'INSERT INTO "occupancies"%'
-            SQL
-            sleep 0.01
+          connection = Timeout.timeout(10) { pid.pop }
+          Timeout.timeout(10) do
+            loop do
+              blocker.execute("SELECT pg_stat_clear_snapshot()")
+              break if blocker.select_value(<<~SQL) == 1
+                SELECT count(*) FROM pg_stat_activity WHERE pid = #{Integer(connection)}
+                  AND wait_event_type = 'Lock' AND query LIKE 'INSERT INTO "occupancies"%'
+              SQL
+              sleep 0.01
+            end
           end
+          travel_to Time.iso8601(commit_time)
         end
-        travel_to Time.iso8601("2026-11-13T09:00:00Z")
       end
+      status, body = Timeout.timeout(10) { thread.value }
+      expect(status).to eq(409)
+      expect(body).to include("code" => "invalid_interval")
+      expect(Booking.count).to eq(0)
+      expect(Occupancy.count).to eq(0)
+    ensure
+      thread&.join(15)
     end
-    status, body = Timeout.timeout(10) { thread.value }
-    expect(status).to eq(409)
-    expect(body).to include("code" => "invalid_interval")
-    expect(Booking.count).to eq(0)
-    expect(Occupancy.count).to eq(0)
-  ensure
-    thread&.join(15)
   end
 
   it "rechecks publication and reviewed details after waiting for an offer edit transaction" do

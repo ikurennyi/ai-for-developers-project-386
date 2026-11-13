@@ -56,6 +56,39 @@ RSpec.describe "Meeting type changes and booked commitments", type: :request do
     end
   end
 
+  it "keeps both sides of Berlin DST fixed after editing every offer term and hiding it" do
+    travel_to Time.iso8601("2026-10-23T06:00:00Z")
+    saved = [
+      [ "2026-10-23T07:00:00Z", "2026-10-23T07:20:00Z" ],
+      [ "2026-10-26T08:00:00Z", "2026-10-26T08:20:00Z" ]
+    ].map do |starts, ends|
+      post "/api/v1/meeting-types/discussion/bookings", params: confirmation(@offer, starts_at: starts), as: :json
+      expect(response).to have_http_status(:created)
+      OpenapiContract.validate!(request, response)
+      expect(response.parsed_body).to include("startsAt" => starts, "endsAt" => ends)
+      response.parsed_body
+    end
+    change_offer(@offer, { name: "New name", description: "New description",
+      durationMinutes: 90, slug: "new-address" })
+    expect(response).to have_http_status(:ok)
+    OpenapiContract.validate!(request, response)
+    change_offer(@offer, { published: false })
+    expect(response).to have_http_status(:ok)
+    OpenapiContract.validate!(request, response)
+
+    travel_to Time.iso8601("2026-10-26T06:00:00Z")
+    saved.each do |booking|
+      expect(Booking.find(booking.fetch("id"))).to have_attributes(
+        meeting_name: "Discussion", meeting_description: "Original terms", duration_minutes: 20,
+        starts_at: Time.iso8601(booking.fetch("startsAt")), ends_at: Time.iso8601(booking.fetch("endsAt")))
+    end
+    get "/api/v1/meeting-types/other/availability"
+    expect(response).to have_http_status(:ok)
+    OpenapiContract.validate!(request, response)
+    expect(response.parsed_body.fetch("days").flat_map { |day| day.fetch("intervals") }).to include(
+      include("startsAt" => "2026-10-26T08:00:00Z", "available" => false))
+  end
+
   context "when administration and confirmation overlap on independent PostgreSQL connections" do
     self.use_transactional_tests = false
 
