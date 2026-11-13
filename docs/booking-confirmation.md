@@ -32,13 +32,14 @@ Server time is checked again after potentially waiting inserts, before commit.
 
 Success displays saved data, “This meeting is scheduled”, “No confirmation email
 will be sent.” and Book another meeting. There is **no public booking GET** or
-guest-information lookup. The creation response lives only in the mounted form;
-refresh does not POST again or expose a booking by identifier.
+guest-information lookup. The creation response is retained only in the confirming
+tab's session history; refresh does not POST again or expose a booking by identifier.
+See [guest navigation and privacy](guest-navigation.md).
 
 ## Boundaries and verification
 
-Tab-local draft/success refresh persistence belongs to #29; stable logical attempt
-identity and uncertain-result recovery to #30; advanced conflict/changed-detail
+Tab-local draft/success refresh persistence is implemented in #29; stable logical
+attempt identity and uncertain-result recovery belong to #30; advanced conflict/changed-detail
 recovery to #31. This slice reports distinguishable failures without automatically
 selecting a replacement time or accepting changed terms. Future authenticated
 deletion must delete booking and occupancy together; deleting neither is the
