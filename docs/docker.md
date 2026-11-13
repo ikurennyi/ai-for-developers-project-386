@@ -108,6 +108,7 @@ product), then run against this dedicated stack:
 
 ```sh
 mise exec -- node test/docker_acceptance.mjs
+mise exec -- ruby test/docker_setup_test.rb
 # Export only committed HEAD into a fresh private directory; build without
 # host dependencies/config, run the same acceptance, stop and retain its data:
 HTTPS_PORT=8444 mise exec -- ruby test/docker_clean_checkout_test.rb
@@ -123,3 +124,34 @@ shared or valuable installation.
 
 Local execution evidence is recorded separately below; it is not evidence of
 external GitHub Actions, a public deployment, or completion of parent #22.
+
+### Local evidence (2026-11-13)
+
+- Red: the documented Compose configuration was absent, and Chromium could not
+  connect to the application before delivery.
+- macOS arm64, Docker Engine 29.9.3, Compose 5.7.0, pinned Ruby/Node,
+  PostgreSQL 18.3; no email/video/calendar services or credentials.
+- Worktree project `calendar-690a3057fc782cbdced8`, HTTPS port 8466:
+  real Vue booking/confirmation, browser login/edit/hide, authenticated booking
+  visibility, app restart, forced recreation and rotation acceptance passed.
+- Committed `9b6da13` (including integration tip `beb975f`) was exported using
+  `git archive`, without `.git`, host dependencies, ignored files or local
+  configuration. Its separate project `calendar-b9d930f465c6c3f9e2b6`, port 8467,
+  built/started successfully and passed the same complete acceptance.
+  Both projects were stopped, retaining their separate PostgreSQL volumes and
+  private configurations. The clean export remains under
+  `.services/docker-clean-8d24e7d3b73b` for inspection/restart.
+- HTTP assertions compare booking snapshots and exact start/end instants before
+  and after restart/recreation, retain edited hidden initial types without
+  duplicate seed offers, and verify occupancy through another published type.
+  Rotation rejects the old password/session and accepts a new login without
+  changing saved data. Chromium runs in Honolulu to exercise Berlin-independent
+  device settings, with certificate bypass confined to this local test.
+- Setup CLI probes passed: invalid/occupied ports fail before writing secrets,
+  generated credentials have mode 0600, and repeated setup cannot overwrite them.
+- Full `mise run check` passed: contract generation/drift/SDK typing, all static
+  gates, 90 PostgreSQL RSpec examples, jsdom, real Chromium/application smoke and
+  production build. Existing npm pins still report 13 moderate frontend
+  advisories; no dependency upgrade or audit-fix was performed.
+- External GitHub Actions/Hexlet, public deployment and parent-spec completion
+  remain unconfirmed. The protected Hexlet workflow was not changed.
