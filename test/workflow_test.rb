@@ -18,6 +18,13 @@ class WorkflowTest < Minitest::Test
     checkout = steps.find { |step| step.fetch("uses", "").start_with?("actions/checkout@") }
     assert_equal 0, checkout.fetch("with").fetch("fetch-depth")
     assert_equal false, checkout.fetch("with").fetch("persist-credentials")
+    mise = steps.find { |step| step.fetch("uses", "").start_with?("jdx/mise-action@") }
+    fetch_before = steps.find { |step| step["name"] == "Fetch previous push commit when missing" }
+    commit_check = steps.find { |step| step.fetch("run", "").include?("mise run commits:check") }
+    assert_equal "github.event_name == 'push'", fetch_before.fetch("if")
+    assert_equal "node tooling/fetch-push-before.mjs", fetch_before.fetch("run")
+    assert_operator steps.index(mise), :<, steps.index(fetch_before)
+    assert_operator steps.index(fetch_before), :<, steps.index(commit_check)
     runs = steps.filter_map { |step| step["run"] }.join("\n")
     assert_includes runs, "mise run check"
     assert_includes runs, "install --with-deps chromium"

@@ -38,6 +38,9 @@ jobs:
         with:
           version: 2026.11.6
           cache: false
+      - name: Fetch previous push commit when missing
+        if: github.event_name == 'push'
+        run: node tooling/fetch-push-before.mjs
       - name: Install locked dependencies
         run: |
           mise exec -- gem install bundler -v 4.0.22 --no-document
