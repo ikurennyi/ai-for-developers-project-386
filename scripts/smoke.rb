@@ -180,6 +180,8 @@ class Smoke
     ready("Vite application") { http_ready(app_port, "/") }
     puts command("admin-navigation", "node", "e2e/admin-navigation.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
+    puts command("create-meeting-type", "node", "e2e/create-meeting-type.mjs",
+      directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     puts command("calendar-navigation", "node", "e2e/calendar-navigation.mjs",
       directory: File.join(ROOT, "frontend"), env: { "APP_ORIGIN" => "http://127.0.0.1:#{app_port}" })
     # A fresh application process must read the same persisted offers.
