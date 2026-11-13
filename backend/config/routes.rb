@@ -23,6 +23,9 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  # Production serves the built SPA on the same origin as the API.
+  if Rails.env.production?
+    root "frontend#show"
+    get "*path", to: "frontend#show", constraints: ->(request) { !request.path.start_with?("/api/") }
+  end
 end
