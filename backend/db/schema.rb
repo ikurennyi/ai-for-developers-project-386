@@ -14,6 +14,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
+  create_table "admin_login_limits", primary_key: "key", id: :string, force: :cascade do |t|
+    t.datetime "started_at", null: false
+    t.integer "attempts", default: 0, null: false
+  end
+
+  create_table "admin_sessions", force: :cascade do |t|
+    t.string "token_digest", null: false
+    t.datetime "expires_at", null: false
+    t.index ["token_digest"], name: "index_admin_sessions_on_token_digest", unique: true
+  end
+
+  create_table "administrators", force: :cascade do |t|
+    t.string "username", null: false
+    t.string "password_digest", null: false
+    t.check_constraint "id = 1", name: "single_administrator"
+  end
+
   create_table "meeting_types", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", limit: 100, null: false
     t.text "description", default: "", null: false

@@ -11,9 +11,176 @@
     },
     {
       "name": "Meeting types"
+    },
+    {
+      "name": "Administrator authentication"
     }
   ],
   "paths": {
+    "/admin/session": {
+      "post": {
+        "operationId": "loginAdmin",
+        "summary": "Log in to the single administrator account",
+        "description": "Creates a 24-hour session. Requires X-Calendar-Request: 1 and same-origin browser requests. Sets an HttpOnly cookie. Credentials errors are always generic. Ten attempts per IP per 15 minutes, shared through PostgreSQL.",
+        "parameters": [
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required custom header; cross-origin browsers must preflight and are not granted CORS access.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Ten login attempts per IP per 15-minute window have been used.",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "description": "The operator-configured username and password."
+        }
+      },
+      "get": {
+        "operationId": "getAdminSession",
+        "summary": "Read the current administrator session",
+        "description": "Requires the session cookie; never extends expiry. Responses are not cacheable.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid administrator session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator authentication"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "logoutAdmin",
+        "summary": "Revoke the current administrator session",
+        "description": "Immediately revokes the cookie's session. Requires X-Calendar-Request: 1; safe to repeat.",
+        "parameters": [
+          {
+            "name": "X-Calendar-Request",
+            "in": "header",
+            "required": true,
+            "description": "Required custom header protecting against cross-origin form submissions.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. "
+          },
+          "403": {
+            "description": "The browser request failed same-origin protection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Administrator authentication"
+        ],
+        "security": [
+          {
+            "AdminCookie": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "getHealth",
@@ -106,6 +273,54 @@
   },
   "components": {
     "schemas": {
+      "AdminSession": {
+        "type": "object",
+        "required": [
+          "username",
+          "expiresAt"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Configured administrator username.",
+            "example": "owner"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Absolute session expiry, 24 hours after login.",
+            "example": "2026-11-14T10:00:00Z"
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "The single administrator's current session. Expiry never slides.",
+        "example": {
+          "username": "owner",
+          "expiresAt": "2026-11-14T10:00:00Z"
+        }
+      },
+      "AuthError": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Safe explanation of the failure.",
+            "example": "Authentication required"
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "An English API error without credentials or private data.",
+        "example": {
+          "message": "Authentication required"
+        }
+      },
       "Availability": {
         "type": "object",
         "required": [
@@ -279,6 +494,33 @@
           "available": true
         }
       },
+      "Credentials": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Administrator username.",
+            "example": "owner"
+          },
+          "password": {
+            "type": "string",
+            "description": "Administrator password.",
+            "example": "example-not-a-default-password"
+          }
+        },
+        "additionalProperties": {
+          "not": {}
+        },
+        "description": "Initial credentials are configured by the operator, not public defaults.",
+        "example": {
+          "username": "owner",
+          "password": "example-not-a-default-password"
+        }
+      },
       "Health": {
         "type": "object",
         "required": [
@@ -391,6 +633,14 @@
         "example": {
           "message": "Meeting type unavailable"
         }
+      }
+    },
+    "securitySchemes": {
+      "AdminCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "calendar_admin",
+        "description": "Opaque HttpOnly SameSite=Strict cookie, Secure in production."
       }
     }
   },
