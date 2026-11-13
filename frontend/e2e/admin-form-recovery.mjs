@@ -82,7 +82,7 @@ try {
   })
   assert.equal(created.status(), 201)
   const type = await created.json()
-  await page.goto(`${origin}/admin/links/${type.id}/edit`)
+  await page.goto(`${origin}/admin/links/${type.id}/edit?from=links`)
   await name.fill('Recovery edited offer')
   await context.request.delete(`${origin}/api/v1/admin/session`, {
     headers: { 'X-Calendar-Request': '1' },
@@ -93,6 +93,7 @@ try {
   await page.getByRole('heading', { name: 'Edit meeting type' }).waitFor()
   assert.equal(await name.inputValue(), 'Recovery edited offer')
   assert.equal(new URL(page.url()).pathname, `/admin/links/${type.id}/edit`)
+  assert.equal(new URL(page.url()).search, '?from=links')
   const unchanged = await context.request.get(`${origin}/api/v1/admin/meeting-types/${type.id}`)
   assert.equal((await unchanged.json()).name, 'Recovery saved offer')
   await page.getByRole('button', { name: 'Save', exact: true }).click()

@@ -43,10 +43,11 @@ export function discardAdminForm() {
 }
 
 export function adminFormNavigated(path: string, returnTo: unknown) {
+  const returnPath = typeof returnTo === 'string' ? returnTo.split(/[?#]/)[0] : undefined
   if (
     state.draft &&
     path !== state.draft.path &&
-    !(path === '/admin/login' && returnTo === state.draft.path)
+    !(path === '/admin/login' && returnPath === state.draft.path)
   )
     discardAdminForm()
   else persistAdminForm()
