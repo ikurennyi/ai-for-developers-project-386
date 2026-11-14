@@ -98,6 +98,7 @@ These are not extra gates in `check`; run them when changing infrastructure:
 | --- | --- |
 | `mise run services:test` | Lifecycle configuration/validation CLI tests, no Docker |
 | `mise run services:fresh-test` | Fresh dedicated checkout/volume: immediate TCP SQL after `db:up`, preparation, stop retaining data |
+| `mise run docker:image-check` | Build production image; verify no-DB diagnostic page and requested port |
 | `mise run ci:database-test` | Local Docker fixture simulates CI service: parallel gates, failures, aggregate and SQL cleanup assertions |
 | `mise run smoke:test` | Real parallel smoke and failure/timeout cleanup probes |
 | `mise run check:test` | Real deliberate failures for every aggregate gate |

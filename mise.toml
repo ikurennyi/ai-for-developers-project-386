@@ -64,6 +64,10 @@ run = "ruby test/services_test.rb"
 description = "Probe final TCP readiness from a fresh dedicated checkout/volume"
 run = "ruby test/fresh_database_integration_test.rb"
 
+[tasks."docker:image-check"]
+description = "Build the production Docker image and verify its diagnostic mode without DATABASE_URL"
+run = "ruby test/docker_no_database_test.rb"
+
 [tasks."ci:database-test"]
 description = "Simulate the CI PostgreSQL service locally, including parallel/failing gates"
 run = "ruby test/ci_database_integration_test.rb"
