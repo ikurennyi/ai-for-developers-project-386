@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
 if ARGV[0] == "bundle" && ARGV[2] == "puma"
-  %w[SECRET_KEY_BASE ADMIN_USERNAME ADMIN_PASSWORD].each do |key|
-    abort "#{key} is required" if ENV.fetch(key, "").empty?
-  end
+  require "securerandom"
+  ENV["SECRET_KEY_BASE"] = SecureRandom.hex(64) if ENV.fetch("SECRET_KEY_BASE", "").empty?
   system("bundle", "exec", "rails", "db:prepare", exception: true)
   system("bundle", "exec", "rails", "db:seed", exception: true)
 end
